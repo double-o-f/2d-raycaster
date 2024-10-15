@@ -100,15 +100,15 @@ int main(int argc, char const *argv[])
         //delete these later
         if (p.x + 1 < SCREEN_WIDTH && p.x + 1 >= 0 && p.y < SCREEN_HEIGHT && p.y >= 0)
         {
-            pixels[p.x + 1 + (p.y * SCREEN_WIDTH)] = setColor((p.x * 255) / SCREEN_WIDTH, 255 - ((p.y * 255) / SCREEN_HEIGHT), (p.y * 255) / SCREEN_HEIGHT, 255);
+            pixels[(p.x + 1) + (p.y * SCREEN_WIDTH)] = setColor(((p.x + 1) * 255) / SCREEN_WIDTH, 255 - ((p.y * 255) / SCREEN_HEIGHT), (p.y * 255) / SCREEN_HEIGHT, 255);
         }
         if (p.x < SCREEN_WIDTH && p.x >= 0 && p.y + 1 < SCREEN_HEIGHT && p.y + 1 >= 0)
         {
-            pixels[p.x + ((p.y + 1) * SCREEN_WIDTH)] = setColor((p.x * 255) / SCREEN_WIDTH, 255 - ((p.y * 255) / SCREEN_HEIGHT), (p.y * 255) / SCREEN_HEIGHT, 255);
+            pixels[p.x + ((p.y + 1) * SCREEN_WIDTH)] = setColor((p.x * 255) / SCREEN_WIDTH, 255 - (((p.y + 1) * 255) / SCREEN_HEIGHT), ((p.y + 1) * 255) / SCREEN_HEIGHT, 255);
         }
         if (p.x + 1 < SCREEN_WIDTH && p.x + 1 >= 0 && p.y + 1 < SCREEN_HEIGHT && p.y + 1 >= 0)
         {
-            pixels[p.x + 1 + ((p.y + 1) * SCREEN_WIDTH)] = setColor((p.x * 255) / SCREEN_WIDTH, 255 - ((p.y * 255) / SCREEN_HEIGHT), (p.y * 255) / SCREEN_HEIGHT, 255);
+            pixels[(p.x + 1) + ((p.y + 1) * SCREEN_WIDTH)] = setColor(((p.x + 1) * 255) / SCREEN_WIDTH, 255 - (((p.y + 1) * 255) / SCREEN_HEIGHT), ((p.y + 1) * 255) / SCREEN_HEIGHT, 255);
         }
 
 
