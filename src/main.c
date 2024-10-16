@@ -3,7 +3,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __WIN64
+#define SDL_MAIN_HANDLED
+#endif
 #include <SDL2/SDL.h>
+
 
 #define SCREEN_WIDTH  80 // 1440// 
 #define SCREEN_HEIGHT 60 // 1080// 
