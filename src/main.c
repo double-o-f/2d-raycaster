@@ -8,9 +8,38 @@
 #endif
 #include <SDL2/SDL.h>
 
-
 #define SCREEN_WIDTH  80 // 1440// 
-#define SCREEN_HEIGHT 60 // 1080// 
+#define SCREEN_HEIGHT 60 // 1080// 60
+
+//#define MAP_SIZE 6
+//int map[MAP_SIZE * MAP_SIZE + 1] = {
+//            0, 1, 0, 1, 0, 1,
+//            1, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 1,
+//            1, 1, 1, 1, 1, 1};
+
+#define MAP_SIZE 7
+int map[MAP_SIZE * MAP_SIZE] = {
+            0, 1, 0, 1, 0, 1, 0,
+            1, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1};
+
+//#define MAP_SIZE 8
+//int map[MAP_SIZE * MAP_SIZE] = {
+//            1, 1, 1, 1, 1, 1, 1, 1,
+//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 1, 1, 1, 1, 1, 1, 1};
 
 
 uint32_t pixels[SCREEN_WIDTH * SCREEN_WIDTH];
@@ -22,10 +51,10 @@ SDL_Renderer *renderer;
 bool quit = false;
 
 struct {
-    int x;
-    int y;
-} p;
-
+    float x;
+    float y;
+    float rot;
+} player;
 
 
 uint32_t setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
@@ -33,10 +62,54 @@ uint32_t setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     return col;
 }
 
+void drawMap() {
+
+    int nextScreenY = 0;
+    for (int i = 0; i < MAP_SIZE; i += 1) {     //i = y, j = x
+
+        int screenY = nextScreenY;
+        if (i + 1 < MAP_SIZE) {
+            nextScreenY = ((i + 1) * SCREEN_HEIGHT) / MAP_SIZE;     //used on next iteration to set current screenY
+        }
+        else {
+            nextScreenY = SCREEN_HEIGHT;
+        }
+        int gapSizeY = nextScreenY - screenY;
+
+        int nextScreenX = 0;
+        for (int j = 0; j < MAP_SIZE; j += 1) {
+
+            int screenX = nextScreenX;
+            if (j + 1 < MAP_SIZE) {
+                nextScreenX = ((j + 1) * SCREEN_WIDTH) / MAP_SIZE;  //used on next iteration to set current screenX
+            }
+            else {
+                nextScreenX = SCREEN_WIDTH;
+            }
+            int gapSizeX = nextScreenX - screenX;
+
+            int wallType = map[j + (i * MAP_SIZE)];
+            uint32_t screenCol;
+            if (wallType == 1) {
+                screenCol = 0x990044FF;
+            }
+            else {
+                screenCol = 0x222222FF;
+            }
+            for (int ii = 0; ii < gapSizeY; ii += 1) {
+                for (int jj = 0; jj < gapSizeX; jj += 1) {
+                    pixels[jj + screenX + ((ii + screenY) * SCREEN_WIDTH)] = screenCol;
+                }
+            }
+        }
+    }
+}
+
 
 int main(int argc, char const *argv[])
 {
-    fprintf(stdout, "%s\n", ":)");
+    printf("%s\n", ":)");
+    printf("%f\n", M_PI);
 
     if(SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "SDL failed to initialize: %s\n", SDL_GetError());
@@ -47,7 +120,7 @@ int main(int argc, char const *argv[])
         SDL_WINDOWPOS_CENTERED_DISPLAY(0), 
         SDL_WINDOWPOS_CENTERED_DISPLAY(0), 
         800, 
-        600, 
+        600, //600
         SDL_WINDOW_ALLOW_HIGHDPI);
     if(!window) {
         fprintf(stderr, "failed to create SDL window: %s\n", SDL_GetError());
@@ -68,10 +141,11 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "failed to create SDL texture: %s\n", SDL_GetError());
     }
 
-    p.x = 0;
-    p.y = 0;
 
-
+    player.x = 3;
+    player.y = 3;
+    player.rot = 0;
+    
     while (!quit){
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -82,39 +156,21 @@ int main(int argc, char const *argv[])
 
         const uint8_t *keystate = SDL_GetKeyboardState(NULL);
         if (keystate[SDL_SCANCODE_LEFT]) {
-            p.x -= 1;
+            
         }
         if (keystate[SDL_SCANCODE_RIGHT]) {
-            p.x += 1;
+            
         }
         if (keystate[SDL_SCANCODE_UP]) {
-            p.y -= 1;
+            
         }
         if (keystate[SDL_SCANCODE_DOWN]) {
-            p.y += 1;
+            
         }
 
 
         memset(pixels, 0, sizeof(pixels));
-
-        if (p.x < SCREEN_WIDTH && p.x >= 0 && p.y < SCREEN_HEIGHT && p.y >= 0)
-        {
-            pixels[p.x + (p.y * SCREEN_WIDTH)] = setColor((p.x * 255) / SCREEN_WIDTH, 255 - ((p.y * 255) / SCREEN_HEIGHT), (p.y * 255) / SCREEN_HEIGHT, 255);
-        }
-        //delete these later
-        if (p.x + 1 < SCREEN_WIDTH && p.x + 1 >= 0 && p.y < SCREEN_HEIGHT && p.y >= 0)
-        {
-            pixels[(p.x + 1) + (p.y * SCREEN_WIDTH)] = setColor(((p.x + 1) * 255) / SCREEN_WIDTH, 255 - ((p.y * 255) / SCREEN_HEIGHT), (p.y * 255) / SCREEN_HEIGHT, 255);
-        }
-        if (p.x < SCREEN_WIDTH && p.x >= 0 && p.y + 1 < SCREEN_HEIGHT && p.y + 1 >= 0)
-        {
-            pixels[p.x + ((p.y + 1) * SCREEN_WIDTH)] = setColor((p.x * 255) / SCREEN_WIDTH, 255 - (((p.y + 1) * 255) / SCREEN_HEIGHT), ((p.y + 1) * 255) / SCREEN_HEIGHT, 255);
-        }
-        if (p.x + 1 < SCREEN_WIDTH && p.x + 1 >= 0 && p.y + 1 < SCREEN_HEIGHT && p.y + 1 >= 0)
-        {
-            pixels[(p.x + 1) + ((p.y + 1) * SCREEN_WIDTH)] = setColor(((p.x + 1) * 255) / SCREEN_WIDTH, 255 - (((p.y + 1) * 255) / SCREEN_HEIGHT), ((p.y + 1) * 255) / SCREEN_HEIGHT, 255);
-        }
-
+        drawMap();
 
         SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * 4);
         SDL_RenderCopyEx(
