@@ -8,8 +8,8 @@
 #endif
 #include <SDL2/SDL.h>
 
-#define SCREEN_WIDTH  80 // 1440// 
-#define SCREEN_HEIGHT 60 // 1080// 60
+#define SCREEN_WIDTH  400 // 1440// 
+#define SCREEN_HEIGHT 300 // 1080// 60
 
 //#define MAP_SIZE 6
 //int map[MAP_SIZE * MAP_SIZE + 1] = {
@@ -54,6 +54,7 @@ struct {
     float x;
     float y;
     float rot;
+    float size;
 } player;
 
 
@@ -96,6 +97,8 @@ void drawMap() {
             else {
                 screenCol = 0x222222FF;
             }
+            //gapSizeY = 10;
+            //gapSizeX = 10;
             for (int ii = 0; ii < gapSizeY; ii += 1) {
                 for (int jj = 0; jj < gapSizeX; jj += 1) {
                     pixels[jj + screenX + ((ii + screenY) * SCREEN_WIDTH)] = screenCol;
@@ -105,11 +108,46 @@ void drawMap() {
     }
 }
 
+void drawMapPlayer() {
+
+}
+
+void drawLine(float sX, float sY, float eX, float eY, uint32_t col) {
+    float startX = (sX * SCREEN_WIDTH) / MAP_SIZE;
+    float startY = (sY * SCREEN_HEIGHT) / MAP_SIZE;
+    float endX = (eX * SCREEN_WIDTH) / MAP_SIZE;
+    float endY = (eY * SCREEN_HEIGHT) / MAP_SIZE;
+
+    float distX = endX - startX;
+    float distY = endY - startY;
+
+    printf("%f, %f\n", fabs(distX), fabs(distY));
+    printf("%f, %f\n", distX, distY);
+    if (fabs(distY) > fabs(distX)) {
+        float stepX = distX / distY;
+        float j = startX;
+        for (float i = startY; i < distY; i += 1) {
+            pixels[(int)j + ((int)i * SCREEN_WIDTH)] = col;
+            j += stepX;
+        }
+    }
+    else {
+        float stepY = (distY / distX);
+        float j = startY;
+        for (float i = startX; i < distX; i += 1) {
+            pixels[(int)i + ((int)j * SCREEN_WIDTH)] = col;
+            j += stepY;
+        }
+    }
+    //pixels[(int)startX + ((int)startY * SCREEN_WIDTH)] = 0x0000FFFF;
+    //pixels[(int)endX + ((int)endY * SCREEN_WIDTH)] = 0x0000FFFF;
+
+}
+
 
 int main(int argc, char const *argv[])
 {
     printf("%s\n", ":)");
-    printf("%f\n", M_PI);
 
     if(SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "SDL failed to initialize: %s\n", SDL_GetError());
@@ -145,6 +183,7 @@ int main(int argc, char const *argv[])
     player.x = 3;
     player.y = 3;
     player.rot = 0;
+    player.size = 0.25;
     
     while (!quit){
         SDL_Event event;
@@ -171,6 +210,9 @@ int main(int argc, char const *argv[])
 
         memset(pixels, 0, sizeof(pixels));
         drawMap();
+        drawLine(0, 7, 3, 0, 0xFFFFFFFF);
+        drawLine(0, 0, 3, 7, 0xFFFFFFFF);
+
 
         SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * 4);
         SDL_RenderCopyEx(
