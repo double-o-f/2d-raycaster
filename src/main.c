@@ -22,11 +22,11 @@
 
 #define MAP_SIZE 7
 int map[MAP_SIZE * MAP_SIZE] = {
-            0, 1, 0, 1, 0, 1, 0,
+            1, 1, 1, 1, 1, 1, 1,
             1, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 1, 0, 1,
             1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 1, 0, 1,
             1, 0, 0, 0, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1};
 
@@ -57,6 +57,12 @@ struct {
     float size;
 } player;
 
+struct {
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+} lineThing;
 
 uint32_t setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     uint32_t col = (16777216 * R) + (65536 * G) + (256 * B) + (1 * A);
@@ -120,28 +126,45 @@ void drawLine(float sX, float sY, float eX, float eY, uint32_t col) {
 
     float distX = endX - startX;
     float distY = endY - startY;
+    if (sX == eX && sY == eY) {
+        pixels[(int)startX + ((int)startY * SCREEN_WIDTH)] = col;
+        return;
+    }
 
-    printf("%f, %f\n", fabs(distX), fabs(distY));
-    printf("%f, %f\n", distX, distY);
     if (fabs(distY) > fabs(distX)) {
         float stepX = distX / distY;
+        if (distY < 0) {
+            float bStartY = startY;
+            startY = endY;
+            endY = bStartY;
+
+            //float bStartX = startX;
+            startX = endX;
+            //endX = bStartX;
+        }
         float j = startX;
-        for (float i = startY; i < distY; i += 1) {
+        for (float i = startY; i < endY; i += 1) {
             pixels[(int)j + ((int)i * SCREEN_WIDTH)] = col;
             j += stepX;
         }
     }
     else {
-        float stepY = (distY / distX);
+        float stepY = distY / distX;
+        if (distX < 0) {
+            float bStartX = startX;
+            startX = endX;
+            endX = bStartX;
+
+            //float bStartY = startY;
+            startY = endY;
+            //endY = bStartY;
+        }
         float j = startY;
-        for (float i = startX; i < distX; i += 1) {
+        for (float i = startX; i < endX; i += 1) {
             pixels[(int)i + ((int)j * SCREEN_WIDTH)] = col;
             j += stepY;
         }
     }
-    //pixels[(int)startX + ((int)startY * SCREEN_WIDTH)] = 0x0000FFFF;
-    //pixels[(int)endX + ((int)endY * SCREEN_WIDTH)] = 0x0000FFFF;
-
 }
 
 
@@ -184,6 +207,12 @@ int main(int argc, char const *argv[])
     player.y = 3;
     player.rot = 0;
     player.size = 0.25;
+
+    lineThing.x1 = 2;
+    lineThing.y1 = 2;
+    lineThing.x2 = 5;
+    lineThing.y2 = 5;
+    float step = 0.1;
     
     while (!quit){
         SDL_Event event;
@@ -193,26 +222,37 @@ int main(int argc, char const *argv[])
             }
         }
 
+
         const uint8_t *keystate = SDL_GetKeyboardState(NULL);
         if (keystate[SDL_SCANCODE_LEFT]) {
-            
+            lineThing.x1 -= step;
         }
         if (keystate[SDL_SCANCODE_RIGHT]) {
-            
+            lineThing.x1 += step;
         }
         if (keystate[SDL_SCANCODE_UP]) {
-            
+            lineThing.y1 -= step;
         }
         if (keystate[SDL_SCANCODE_DOWN]) {
-            
+            lineThing.y1 += step;
         }
 
+        if (keystate[SDL_SCANCODE_A]) {
+            lineThing.x2 -= step;
+        }
+        if (keystate[SDL_SCANCODE_D]) {
+            lineThing.x2 += step;
+        }
+        if (keystate[SDL_SCANCODE_W]) {
+            lineThing.y2 -= step;
+        }
+        if (keystate[SDL_SCANCODE_S]) {
+            lineThing.y2 += step;
+        }
 
         memset(pixels, 0, sizeof(pixels));
         drawMap();
-        drawLine(0, 7, 3, 0, 0xFFFFFFFF);
-        drawLine(0, 0, 3, 7, 0xFFFFFFFF);
-
+        drawLine(lineThing.x1, lineThing.y1, lineThing.x2, lineThing.y2, 0xFFFFFFFF);
 
         SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * 4);
         SDL_RenderCopyEx(
