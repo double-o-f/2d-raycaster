@@ -17,8 +17,11 @@
 
 uint32_t voidColor = 0x00000000;
 uint32_t color0 = 0x222222FF;
+uint32_t skyColor = 0x00CCEEFF;
+uint32_t floorColor = 0x222222FF;
 uint32_t color1 = 0x990044FF;
 uint32_t color2 = 0x004499FF;
+uint32_t color3 = 0x994400FF;
 
 //#define MAP_SIZE 6
 //int map[MAP_SIZE * MAP_SIZE + 1] = {
@@ -29,26 +32,45 @@ uint32_t color2 = 0x004499FF;
 //            1, 0, 0, 0, 0, 1,
 //            1, 1, 1, 1, 1, 1};
 
-#define MAP_SIZE 7
-int map[MAP_SIZE * MAP_SIZE] = {
-            1, 1, 1, 1, 1, 1, 1,
-            1, 2, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 2, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1};
+//#define MAP_SIZE 7
+//int map[MAP_SIZE * MAP_SIZE] = {
+//            1, 1, 1, 1, 1, 1, 1,
+//            1, 0, 2, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 2, 1,
+//            1, 0, 0, 2, 0, 0, 1,
+//            1, 0, 0, 0, 2, 0, 1,
+//            1, 2, 0, 0, 0, 0, 1,
+//            1, 1, 1, 1, 1, 1, 1};
 
 //#define MAP_SIZE 8
-//int map[MAP_SIZE * MAP_SIZE] = {
-//            1, 1, 1, 1, 0, 1, 1, 1,
+//int map[MAP_SIZE * MAP_SIZE] = {  
+//            1, 1, 1, 1, 1, 1, 1, 1,
 //            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 2, 0, 2, 0, 0, 1,
 //            1, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 2, 0, 2, 0, 0, 1,
+//            1, 0, 0, 0, 0, 2, 0, 1,
 //            1, 0, 0, 0, 0, 0, 0, 1,
 //            1, 1, 1, 1, 1, 1, 1, 1};
+
+#define MAP_SIZE 16
+int map[MAP_SIZE * MAP_SIZE] = {  
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
+            1, 0, 2, 0, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
+            1, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
 
 
 uint32_t pixels[SCREEN_WIDTH * SCREEN_WIDTH];
@@ -147,6 +169,9 @@ void drawMap() {
             else if (wallType == 2) {
                 screenCol = color2;
             }
+            else if (wallType == 3) {
+                screenCol = color3;
+            }
             else {
                 screenCol = color0;
             }
@@ -241,10 +266,7 @@ void drawRays() {
             int rX = (int)rayX;
             int rY = (int)rayY;
             int wallType = map[(int)rayX + ((int)rayY * MAP_SIZE)];
-            if (wallType == 1) {
-                break;
-            }
-            if (wallType == 2) {
+            if (wallType != 0) {
                 break;
             }
 
@@ -271,15 +293,49 @@ void drawWolf() {
         while(true) {
             int wallType = map[(int)rayX + ((int)rayY * MAP_SIZE)];
             if (wallType == 1) {
-                int wallHeight = ((MAP_SIZE - dist(startX, startY, rayX, rayY)) * SCREEN_HEIGHT) / MAP_SIZE;
+                //int wallHeight = ((maxDist - dist(startX, startY, rayX, rayY)) * SCREEN_HEIGHT) / MAP_SIZE;
+                int wallHeight;
+                int rayDist = dist(startX, startY, rayX, rayY);
+                if (rayDist < 1) {
+                    wallHeight = SCREEN_HEIGHT;
+                }
+                else {
+                    wallHeight = SCREEN_HEIGHT / dist(startX, startY, rayX, rayY);
+                }
                 int wallStart = (SCREEN_HEIGHT - wallHeight) / 2;
-                drawVertLine(i, wallStart, wallHeight, color1);
+                drawVertLine(i, 0, wallStart, skyColor);
+                drawVertLine(i, wallStart, (wallStart + wallHeight), color1);
+                drawVertLine(i, (wallStart + wallHeight), SCREEN_HEIGHT, floorColor);
                 break;
             }
             if (wallType == 2) {
-                int wallHeight = ((MAP_SIZE - dist(startX, startY, rayX, rayY)) * SCREEN_HEIGHT) / MAP_SIZE;
+                int wallHeight;
+                int rayDist = dist(startX, startY, rayX, rayY);
+                if (rayDist < 1) {
+                    wallHeight = SCREEN_HEIGHT;
+                }
+                else {
+                    wallHeight = SCREEN_HEIGHT / dist(startX, startY, rayX, rayY);
+                }
                 int wallStart = (SCREEN_HEIGHT - wallHeight) / 2;
-                drawVertLine(i, wallStart, wallHeight, color2);
+                drawVertLine(i, 0, wallStart, skyColor);
+                drawVertLine(i, wallStart, (wallStart + wallHeight), color2);
+                drawVertLine(i, (wallStart + wallHeight), SCREEN_HEIGHT, floorColor);
+                break;
+            }
+            if (wallType == 3) {
+                int wallHeight;
+                int rayDist = dist(startX, startY, rayX, rayY);
+                if (rayDist < 1) {
+                    wallHeight = SCREEN_HEIGHT;
+                }
+                else {
+                    wallHeight = SCREEN_HEIGHT / dist(startX, startY, rayX, rayY);
+                }
+                int wallStart = (SCREEN_HEIGHT - wallHeight) / 2;
+                drawVertLine(i, 0, wallStart, skyColor);
+                drawVertLine(i, wallStart, (wallStart + wallHeight), color3);
+                drawVertLine(i, (wallStart + wallHeight), SCREEN_HEIGHT, floorColor);
                 break;
             }
 
@@ -333,8 +389,9 @@ int main(int argc, char const *argv[])
     player.rSpeed = 0.05;
     
     state.rayStepSize = 0.01;
-    state.fov = ((M_PI * 2) / 6); //90
+    state.fov = ((M_PI * 2) / 4); //90
     bool showMap = false;
+    bool rJP = false;
 
     while (!quit){
         SDL_Event event;
@@ -366,10 +423,18 @@ int main(int argc, char const *argv[])
         }
 
         if (keystate[SDL_SCANCODE_R]) {
-            if (showMap) {showMap = false;}
-            else {showMap = true;}
+            if (!(rJP)) {
+                if (showMap) {showMap = false;}
+                else {showMap = true;}
+                rJP = true;
+            }
+        }
+        else {
+            rJP = false;
         }
 
+
+        memset(pixels, 0, sizeof(pixels));
         if (showMap) {
             memset(pixels, 0, sizeof(pixels));
             drawMap();
@@ -377,7 +442,7 @@ int main(int argc, char const *argv[])
             drawRays();
         }
         else {
-            fill(color0);
+            //fill(color0);
             drawWolf();
         }
 
