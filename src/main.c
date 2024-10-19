@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #ifdef __WIN64
 #define SDL_MAIN_HANDLED
@@ -9,7 +10,7 @@
 #include <SDL2/SDL.h>
 
 #define SCREEN_WIDTH  400 // 1440// 
-#define SCREEN_HEIGHT 300 // 1080// 60
+#define SCREEN_HEIGHT 400 // 1080// 60
 
 //#define MAP_SIZE 6
 //int map[MAP_SIZE * MAP_SIZE + 1] = {
@@ -24,9 +25,9 @@
 int map[MAP_SIZE * MAP_SIZE] = {
             1, 1, 1, 1, 1, 1, 1,
             1, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 0, 1, 0, 1,
+            1, 0, 2, 0, 2, 0, 1,
             1, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 0, 1, 0, 1,
+            1, 0, 2, 0, 2, 0, 1,
             1, 0, 0, 0, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1};
 
@@ -51,18 +52,19 @@ SDL_Renderer *renderer;
 bool quit = false;
 
 struct {
+    float fov; //in radians rn
+    float rayStepSize; //smaller means smaller ray steps (more accurate)
+} state;
+
+struct {
     float x;
     float y;
     float rot;
     float size;
+    float speed;
+    float rSpeed;
 } player;
 
-struct {
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-} lineThing;
 
 uint32_t setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     uint32_t col = (16777216 * R) + (65536 * G) + (256 * B) + (1 * A);
@@ -100,6 +102,9 @@ void drawMap() {
             if (wallType == 1) {
                 screenCol = 0x990044FF;
             }
+            else if (wallType == 2) {
+                screenCol = 0x004499FF;
+            }
             else {
                 screenCol = 0x222222FF;
             }
@@ -124,12 +129,14 @@ void drawLine(float sX, float sY, float eX, float eY, uint32_t col) {
     float endX = (eX * SCREEN_WIDTH) / MAP_SIZE;
     float endY = (eY * SCREEN_HEIGHT) / MAP_SIZE;
 
-    float distX = endX - startX;
-    float distY = endY - startY;
     if (sX == eX && sY == eY) {
         pixels[(int)startX + ((int)startY * SCREEN_WIDTH)] = col;
         return;
     }
+
+    float distX = endX - startX;
+    float distY = endY - startY;
+
 
     if (fabs(distY) > fabs(distX)) {
         float stepX = distX / distY;
@@ -167,6 +174,51 @@ void drawLine(float sX, float sY, float eX, float eY, uint32_t col) {
     }
 }
 
+void drawRays() {
+    float fovOffset = (state.fov / 2) * -1; //starting fov offset
+    float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
+
+    for (int i = 0; i < SCREEN_WIDTH; i += 1) {
+        float rayX = player.x; //starting point of ray
+        float rayY = player.y; //^^
+        float pSin = sinf(player.rot + fovOffset + (fovStep * i));
+        float pCos = cosf(player.rot + fovOffset + (fovStep * i));
+
+        while(true) {
+            if (fabs(rayX) > MAP_SIZE || fabs(rayY) > MAP_SIZE) {
+                //pixels[i] = 0x00000000;
+                break;
+            }
+            int rX = (int)rayX;
+            int rY = (int)rayY;
+            int wallType = map[(int)rayX + ((int)rayY * MAP_SIZE)];
+            if (wallType == 1) {
+                //pixels[i] = 0x990044FF;
+                break;
+            }
+            if (wallType == 2) {
+                //pixels[i] = 0x004499FF;
+                break;
+            }
+
+            drawLine(rayX, rayY, rayX, rayY, 0xFFFFFFFF);
+            rayX += pCos * state.rayStepSize;
+            rayY += pSin * state.rayStepSize;
+        }
+        fovOffset += fovStep;
+    }
+}
+
+void rotatePlayer(float rSpeed) {
+    player.rot += rSpeed;
+    if (player.rot > (M_PI * 2)) {
+        player.rot = 0;
+    }
+    else if (player.rot < 0) {
+        player.rot = (M_PI * 2);
+    }
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -181,7 +233,7 @@ int main(int argc, char const *argv[])
         SDL_WINDOWPOS_CENTERED_DISPLAY(0), 
         SDL_WINDOWPOS_CENTERED_DISPLAY(0), 
         800, 
-        600, //600
+        800, //600
         SDL_WINDOW_ALLOW_HIGHDPI);
     if(!window) {
         fprintf(stderr, "failed to create SDL window: %s\n", SDL_GetError());
@@ -207,12 +259,11 @@ int main(int argc, char const *argv[])
     player.y = 3;
     player.rot = 0;
     player.size = 0.25;
-
-    lineThing.x1 = 2;
-    lineThing.y1 = 2;
-    lineThing.x2 = 5;
-    lineThing.y2 = 5;
-    float step = 0.1;
+    player.speed = 0.05;
+    player.rSpeed = 0.05;
+    
+    state.rayStepSize = 0.25;
+    state.fov = (M_PI / 2); //90
     
     while (!quit){
         SDL_Event event;
@@ -222,37 +273,37 @@ int main(int argc, char const *argv[])
             }
         }
 
-
         const uint8_t *keystate = SDL_GetKeyboardState(NULL);
         if (keystate[SDL_SCANCODE_LEFT]) {
-            lineThing.x1 -= step;
+            rotatePlayer(player.rSpeed * -1);
         }
         if (keystate[SDL_SCANCODE_RIGHT]) {
-            lineThing.x1 += step;
+            rotatePlayer(player.rSpeed);
         }
         if (keystate[SDL_SCANCODE_UP]) {
-            lineThing.y1 -= step;
+            player.y -= player.speed;
         }
         if (keystate[SDL_SCANCODE_DOWN]) {
-            lineThing.y1 += step;
+            player.y += player.speed;
         }
 
         if (keystate[SDL_SCANCODE_A]) {
-            lineThing.x2 -= step;
+            player.x -= player.speed;
         }
         if (keystate[SDL_SCANCODE_D]) {
-            lineThing.x2 += step;
+            player.x += player.speed;
         }
         if (keystate[SDL_SCANCODE_W]) {
-            lineThing.y2 -= step;
+            player.y -= player.speed;
         }
         if (keystate[SDL_SCANCODE_S]) {
-            lineThing.y2 += step;
+            player.y += player.speed;
         }
 
         memset(pixels, 0, sizeof(pixels));
         drawMap();
-        drawLine(lineThing.x1, lineThing.y1, lineThing.x2, lineThing.y2, 0xFFFFFFFF);
+        //drawLine(player.x, player.y, player.x, player.y, 0xFFFFFFFF);
+        drawRays();
 
         SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * 4);
         SDL_RenderCopyEx(
