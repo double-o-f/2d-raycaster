@@ -137,7 +137,7 @@ void fill(uint32_t col) {
 }
 
 float dist(float x1, float y1, float x2, float y2) {
-    return sqrtf(fabs(x2 - x1) + fabs(y2 - y1));
+    return sqrtf(( (x2 - x1) * (x2 - x1) ) + ( (y2 - y1) * (y2 - y1) ));
 }
 
 void drawVertLine(int x, int startY, int endY, uint32_t col) {
@@ -303,10 +303,10 @@ void drawWolf() {
     float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
 
     for (int x = 0; x < SCREEN_WIDTH; x += 1) {
-        float startX = player.x; //starting point of ray
-        float startY = player.y; //^^
-        float rayX = startX;
-        float rayY = startY;
+        //float startX = player.x; //starting point of ray
+        //float startY = player.y; //^^
+        float rayX = player.x;
+        float rayY = player.y;
         float pSin = sinf(player.rot + fovOffset + (fovStep * x));
         float pCos = cosf(player.rot + fovOffset + (fovStep * x));
 
@@ -315,7 +315,7 @@ void drawWolf() {
             int rayDist;
             if (wallType != 0) {
                 int wallHeight;
-                float rayDist = dist(startX, startY, rayX, rayY);
+                float rayDist = dist(player.x, player.y, rayX, rayY);
                 if (rayDist < 1) {
                     wallHeight = SCREEN_HEIGHT;
                 }
@@ -377,7 +377,7 @@ int main(int argc, char const *argv[])
     
     state.rayStepSize = 0.01;
     state.fov = ((M_PI * 2) / 4); //90
-    
+
     bool showMap = false;
     bool rJP = false;
 
