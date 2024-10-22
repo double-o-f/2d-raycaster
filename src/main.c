@@ -88,8 +88,8 @@ struct {
 struct {
     float x;
     float y;
-    float rX;
-    float rY;
+    //float rX;
+    //float rY;
     float rot;
     float speed;
     float rSpeed;
@@ -105,6 +105,44 @@ void playerRotate(float rSpeed) {
         player.rot = (M_PI * 2);
     }
 }
+
+//void playerRotateR() {
+//    if (player.rX > 0 && player.rY >= 0) {
+//        player.rX -= player.rSpeed;
+//        player.rY += player.rSpeed;
+//    }
+//    else if (player.rX <= 0 && player.rY > 0) {
+//        player.rX -= player.rSpeed;
+//        player.rY -= player.rSpeed;  
+//    }
+//    else if (player.rX < 0 && player.rY <= 0) {
+//        player.rX += player.rSpeed;
+//        player.rY -= player.rSpeed;
+//    }
+//    else if (player.rX >= 0 && player.rY < 0) {
+//        player.rX += player.rSpeed;
+//        player.rY += player.rSpeed;
+//    }
+//}
+
+//void playerRotateL() {
+//    if (player.rX > 0 && player.rY <= 0) {
+//        player.rX -= player.rSpeed;
+//        player.rY -= player.rSpeed;
+//    }
+//    else if (player.rX <= 0 && player.rY < 0) {
+//        player.rX -= player.rSpeed;
+//        player.rY += player.rSpeed;  
+//    }
+//    else if (player.rX < 0 && player.rY >= 0) {
+//        player.rX += player.rSpeed;
+//        player.rY += player.rSpeed;
+//    }
+//    else if (player.rX >= 0 && player.rY > 0) {
+//        player.rX += player.rSpeed;
+//        player.rY -= player.rSpeed;
+//    }
+//}
 
 void playerForward(float speed) {
     player.x += cosf(player.rot) * speed;
@@ -156,6 +194,13 @@ void drawVertLine(int x, int startY, int endY, uint32_t col) {
     for (int y = startY; y < endY; y += 1) {
         pixels[x + (y * SCREEN_WIDTH)] = col;
     }
+}
+
+void drawPoint(float x, float y) {
+    float screenX = (x * SCREEN_WIDTH) / MAP_SIZE;
+    float screenY = (y * SCREEN_HEIGHT) / MAP_SIZE;
+
+    pixels[(int)screenX + ((int)screenY * SCREEN_WIDTH)] = col;
 }
 
 void drawLine(float sX, float sY, float eX, float eY, uint32_t col) {  //draw line based on map size
@@ -258,34 +303,34 @@ void drawMap() {
     }
 }
 
-void drawRays() {
-    float fovOffset = (state.fov / 2) * -1; //starting fov offset
-    float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
-
-    for (int x = 0; x < SCREEN_WIDTH; x += 1) {
-        float rayX = player.x; //starting point of ray
-        float rayY = player.y; //^^
-        float pSin = sinf(player.rot + fovOffset + (fovStep * x));
-        float pCos = cosf(player.rot + fovOffset + (fovStep * x));
-
-        while(true) {
-            //if (fabs(rayX) > MAP_SIZE || fabs(rayY) > MAP_SIZE) {
-            //    break;
-            //}
-            int rX = (int)rayX;
-            int rY = (int)rayY;
-            int wallType = map[(int)rayX + ((int)rayY * MAP_SIZE)];
-            if (wallType != 0) {
-                break;
-            }
-
-            drawLine(rayX, rayY, rayX, rayY, 0xFFFFFFFF);
-            rayX += pCos * state.rayStepSize;
-            rayY += pSin * state.rayStepSize;
-        }
-        fovOffset += fovStep;
-    }
-}
+//void drawRays() {
+//    float fovOffset = (state.fov / 2) * -1; //starting fov offset
+//    float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
+//
+//    for (int x = 0; x < SCREEN_WIDTH; x += 1) {
+//        float rayX = player.x; //starting point of ray
+//        float rayY = player.y; //^^
+//        float pSin = sinf(player.rot + fovOffset + (fovStep * x));
+//        float pCos = cosf(player.rot + fovOffset + (fovStep * x));
+//
+//        while(true) {
+//            //if (fabs(rayX) > MAP_SIZE || fabs(rayY) > MAP_SIZE) {
+//            //    break;
+//            //}
+//            int rX = (int)rayX;
+//            int rY = (int)rayY;
+//            int wallType = map[(int)rayX + ((int)rayY * MAP_SIZE)];
+//            if (wallType != 0) {
+//                break;
+//            }
+//
+//            drawLine(rayX, rayY, rayX, rayY, 0xFFFFFFFF);
+//            rayX += pCos * state.rayStepSize;
+//            rayY += pSin * state.rayStepSize;
+//        }
+//        fovOffset += fovStep;
+//    }
+//}
 
 void drawWallSlice(int x, int wallHeight, int wallType) {
     uint32_t col;
@@ -381,91 +426,84 @@ void drawRaysDDA() {
     for (int x = 0; x < SCREEN_WIDTH; x += 1) {
         float pSin = sinf(player.rot + fovOffset + (fovStep * x));
         float pCos = cosf(player.rot + fovOffset + (fovStep * x));
-        int signX = sign(pCos);
-        int signY = sign(pSin);
+        float pTan = pSin / pCos;
+        float pCot = pCos / pSin;
+        float xStep = sqrtf(1 + pTan * pTan);
+        float yStep = sqrtf(1 + pCot * pCot);
 
-        float xStep;
-        float yStep;
-        if (signX == 0) {   //stop n/0 from happening
-            xStep = 0;
-            yStep = signY;
-        }
-        else if(signY == 0) {
-            xStep = signX;
-            yStep = 0;
+        int mapX = player.x;
+        int mapY = player.y;
+        float rayX;
+        float rayY;
+        int xDir;
+        int yDir;
+
+        if (pCos < 0) {
+            xDir = -1;
+            rayX = (player.x - (int)player.x) * xStep;
         }
         else {
-            xStep = sqrtf( 1 + powf(pSin / pCos, 2) ) * signX;
-            yStep = sqrtf( 1 + powf(pCos / pSin, 2) ) * signY;
+            xDir = 1;
+            rayX = (1 + (int)player.x - player.x) * xStep;
         }
-        
+        if (pSin < 0) {
+            yDir = -1;
+            rayY = (player.y - (int)player.y) * yStep;
+        }
+        else {
+            yDir = 1;
+            rayY = (1 + (int)player.y - player.y) * yStep;
+        }
 
-        //float aX = (player.x - (int)player.x) * xStep;  //
-        //float aY = (player.y - (int)player.y) * yStep;  //
-
-        float dX = 0;
-        float dY = 0;
-
-        //int wallType = map[(int)player.x + ((int)player.y * MAP_SIZE)];
-
+        float dist = 0;
         while (true) {
-            //float rayX = (aX + xStep * dX);
-            //float rayY = (aY + yStep * dY);
-            
-            float rayX = (xStep * dX);
-            float rayY = (yStep * dY);
+            float posX = player.x + (dist / xStep) * xDir;
+            float posY = player.y + (dist / yStep) * yDir;
 
-            int posX = ((int)player.x + (int)rayX);
-            int posY = (((int)player.y + (int)rayY) * MAP_SIZE);
+            if (x == 0 || x == SCREEN_WIDTH - 1) {
+                drawLine(posX, posY, posX, posY, 0xFFFFFFFF);
+            }
 
-            int wallType = map[posX + (posY * MAP_SIZE)];
+            int wallType = map[mapX + (mapY * MAP_SIZE)];
             if (wallType != 0) {
-                drawLine( player.x, player.y, posX, posY, 0xFFFFFFFF);
+                drawLine(posX, posY, posX, posY, 0xFFFFFFFF);
                 break;
             }
 
-
-            if ((yStep * (dY + 1)) > (xStep * (dX + 1))) {
-                dX += 1;
+            if (rayX < rayY) {
+                dist = rayX;
+                rayX += xStep;
+                mapX += xDir;
             }
             else {
-                dY += 1;
+                dist = rayY;
+                rayY += yStep;
+                mapY += yDir;
             }
         }
-
-
-
         fovOffset += fovStep;
     }
-
 }
-
-
-
 
 void drawRayDDA() {
 
-    //vPlayer = player.x, player.y
-    //vRayDir = player.rX, player.rY
-
-    //vRayUnitStepSize
-    float xStep = sqrtf(1 + (player.rY / player.rX) * (player.rY / player.rX));
-    float yStep = sqrtf(1 + (player.rX / player.rY) * (player.rX / player.rY));
-
-    //int wallType = map[(int)player.x + ((int)player.y * MAP_SIZE)];
-    // vMapCheck
+    //float xStep = sqrtf(1 + (player.rY / player.rX) * (player.rY / player.rX));
+    //float yStep = sqrtf(1 + (player.rX / player.rY) * (player.rX / player.rY));
+    float pSin = sinf(player.rot);
+    float pCos = cosf(player.rot);
+    float pTan = pSin / pCos;
+    float pCot = pCos / pSin;
+    float xStep = sqrtf(1 + pTan * pTan);
+    float yStep = sqrtf(1 + pCot * pCot);
     int mapX = player.x;
     int mapY = player.y;
-
-    //vRayLength1D
     float rayX;
     float rayY;
-
-    //vStep
     int xDir;
     int yDir;
 
-    if (player.rX < 0) {
+    //if (player.rX < 0) {
+    if (pCos < 0) {
         xDir = -1;
         rayX = (player.x - (int)player.x) * xStep;
     }
@@ -473,10 +511,10 @@ void drawRayDDA() {
         xDir = 1;
         rayX = (1 + (int)player.x - player.x) * xStep;
     }
-    if (player.rY < 0) {
+    //if (player.rY < 0) {
+    if (pSin < 0) {
         yDir = -1;
         rayY = (player.y - (int)player.y) * yStep;
-
     }
     else {
         yDir = 1;
@@ -485,27 +523,14 @@ void drawRayDDA() {
 
     float dist;
     while (true) {
-
-        
-        //int checkX = (player.x + rayX);
-        //int checkY = (player.y + rayY);
+        float posX = player.x + (dist / xStep) * xDir;
+        float posY = player.y + (dist / yStep) * yDir;
+        drawLine(posX, posY, posX, posY, 0xFFFFFFFF);
 
         int wallType = map[mapX + (mapY * MAP_SIZE)];
         if (wallType != 0) {
-            drawLine(mapX, mapY, mapX, mapY, 0xFFFF0000);
-            //float endX = player.x + dist * xDir;
-            //float endY = player.y + dist * yDir;
-            float fuckX = player.x + ((dist/xStep) * xDir);
-            float fuckY = player.y + ((dist/yStep) * yDir);
-            drawLine(player.x, player.y, fuckX, fuckY, 0xFF000000);
-            //printf("%f, %f\n", rayY, rayX);
-            printf("%f\n", dist);
             break;
         }
-    
-        //drawLine(mapX, mapY, mapX, mapY, 0xFFFF0000);
-        //drawLine(rayX, rayY, rayX, rayY, 0x00FFFFFF);
-
 
         if (rayX < rayY) {
             dist = rayX;
@@ -517,14 +542,8 @@ void drawRayDDA() {
             rayY += yStep;
             mapY += yDir;
         }
-
     }
-
 }
-
-
-
-
 
 
 int main(int argc, char const *argv[])
@@ -567,8 +586,8 @@ int main(int argc, char const *argv[])
     player.rot = 0;
     player.speed = 0.05;
     player.rSpeed = 0.05;
-    player.rX = -0.5;
-    player.rY = 0.5;
+    //player.rX = -0.5;
+    //player.rY = 0.5;
     
     state.rayStepSize = 0.01;
     state.fov = ((M_PI * 2) / 4); //90
@@ -621,10 +640,7 @@ int main(int argc, char const *argv[])
         if (showMap) {
             drawMap();
             drawLine(player.x, player.y, player.x, player.y, 0xFFFFFFFF);
-            //float dX = player.x - (int)player.x;
-            //float dY = player.y - (int)player.y;
-            drawRayDDA();
-            //drawLine(dX, dY, dX, dY, 0xFFFFFFFF);
+            drawRaysDDA();
             //drawRays();
         }
         else {
