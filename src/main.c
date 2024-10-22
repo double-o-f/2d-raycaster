@@ -15,7 +15,7 @@
 #define WINDOW_WIDTH  1600 // 1440// 1600
 #define WINDOW_HEIGHT 900 // 1080// 900
 
-uint32_t voidColor = 0x00000000;
+uint32_t voidColor = 0x000000FF;
 uint32_t color0 = 0x222222FF;
 uint32_t skyColor = 0x00CCEEFF;
 uint32_t floorColor = 0x222222FF;
@@ -59,13 +59,21 @@ struct {
 struct {
     float x;
     float y;
+    float lastX;
+    float lastY;
     //float rX;
     //float rY;
     float rot;
     float speed;
     float rSpeed;
+    bool noclip;
 } player;
 
+
+bool collisionCheck (float x, float y) {
+    if (map[(int)x + ((int)y * MAP_SIZE)] == 0) {return false;}
+    return true;
+}
 
 void playerRotate(float rSpeed) {
     player.rot += rSpeed;
@@ -116,23 +124,75 @@ void playerRotate(float rSpeed) {
 //}
 
 void playerForward(float speed) {
-    player.x += cosf(player.rot) * speed;
-    player.y += sinf(player.rot) * speed;
+    float xStep = cosf(player.rot) * speed;
+    float yStep = sinf(player.rot) * speed;
+
+    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
+        player.x += xStep;
+        player.y += yStep;
+    }
+    else {
+        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
+            player.x += xStep;
+        }
+        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
+            player.y += yStep;
+        }
+    }
 }
 
 void playerbackward(float speed) {
-    player.x += cosf(player.rot) * speed * -1;
-    player.y += sinf(player.rot) * speed * -1;
+    float xStep = cosf(player.rot) * speed * -1;
+    float yStep = sinf(player.rot) * speed * -1;
+
+    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
+        player.x += xStep;
+        player.y += yStep;
+    }
+    else {
+        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
+            player.x += xStep;
+        }
+        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
+            player.y += yStep;
+        }
+    }
 }
 
 void playerLeft(float speed) {
-    player.x += sinf(player.rot) * speed;
-    player.y += cosf(player.rot) * speed * -1;
+    float xStep = sinf(player.rot) * speed;
+    float yStep = cosf(player.rot) * speed * -1;
+
+    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
+        player.x += xStep;
+        player.y += yStep;
+    }
+    else {
+        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
+            player.x += xStep;
+        }
+        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
+            player.y += yStep;
+        }
+    }
 }
 
 void playerRight(float speed) {
-    player.x += sinf(player.rot) * speed * -1;
-    player.y += cosf(player.rot) * speed;
+    float xStep = sinf(player.rot) * speed * -1;
+    float yStep = cosf(player.rot) * speed;
+
+    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
+        player.x += xStep;
+        player.y += yStep;
+    }
+    else {
+        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
+            player.x += xStep;
+        }
+        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
+            player.y += yStep;
+        }
+    }
 }
 
 uint32_t setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
@@ -164,7 +224,6 @@ void drawPoint(float x, float y, uint32_t col) {
 }
 
 void drawMap() {
-
     int nextScreenY = 0;
     for (int y = 0; y < MAP_SIZE; y += 1) {
 
@@ -213,7 +272,7 @@ void drawMap() {
     }
 }
 
-void drawWallSlice(int x, int wallHeight, int wallType) {
+void drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
     uint32_t col;
     if (wallType == 1)
     {
@@ -230,6 +289,8 @@ void drawWallSlice(int x, int wallHeight, int wallType) {
     else {
         col = (uint32_t)wallType;   //this is bad but it looks cool
     }
+
+    col &= bright;
     int wallStart = (SCREEN_HEIGHT - wallHeight) / 2;
     drawVertLine(x, 0, wallStart, skyColor);
     drawVertLine(x, wallStart, (wallStart + wallHeight), col);
@@ -336,6 +397,7 @@ void drawRaysDDA() {
             float posX = player.x + (dist / xStep) * xDir;
             float posY = player.y + (dist / yStep) * yDir;
 
+            //drawPoint(posX, posY, 0xFFFFFFFF);
             if (x == 0 || x == SCREEN_WIDTH - 1) {
                 drawPoint(posX, posY, 0xFFFFFFFF);
             }
@@ -398,6 +460,7 @@ void drawWolfDDA() {
         }
 
         float dist = 0;
+        bool last = 0;
         while (true) {
             float posX = player.x + (dist / xStep) * xDir;
             float posY = player.y + (dist / yStep) * yDir;
@@ -411,7 +474,17 @@ void drawWolfDDA() {
                 else {
                     wallHeight = SCREEN_HEIGHT / dist;
                 }
-                drawWallSlice(x, wallHeight, wallType);
+
+                //drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
+                //break;
+
+                if (last) {
+                    drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
+                }
+                else {
+                    drawWallSlice(x, wallHeight, wallType, 0xCCCCCCFF);
+                }
+                
                 break;
             }
 
@@ -419,11 +492,13 @@ void drawWolfDDA() {
                 dist = rayX;
                 rayX += xStep;
                 mapX += xDir;
+                last = 0;
             }
             else {
                 dist = rayY;
                 rayY += yStep;
                 mapY += yDir;
+                last = 1;
             }
         }
         fovOffset += fovStep;
@@ -468,9 +543,12 @@ int main(int argc, char const *argv[])
 
     player.x = 4;
     player.y = 9;
+    player.lastX = player.x;
+    player.lastY = player.y;
     player.rot = 0;
     player.speed = 0.05;
     player.rSpeed = 0.05;
+    player.noclip = false;
     //player.rX = -0.5;
     //player.rY = 0.5;
     
@@ -521,7 +599,7 @@ int main(int argc, char const *argv[])
         }
 
 
-        memset(pixels, 0, sizeof(pixels));
+        // /memset(pixels, 0, sizeof(pixels));
         if (showMap) {
             drawMap();
             drawPoint(player.x, player.y, 0xFFFFFFFF);
@@ -550,3 +628,4 @@ int main(int argc, char const *argv[])
 
     exit(EXIT_SUCCESS);
 }
+
