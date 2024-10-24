@@ -53,7 +53,9 @@ bool quit = false;
 
 struct {
     float fov; //in radians rn
+    float plaDist; //plane dist from player
     float rayStepSize; //smaller means smaller ray steps (more accurate)
+    float plaW; //plane width
 } state;
 
 struct {
@@ -69,6 +71,15 @@ struct {
     bool noclip;
 } player;
 
+
+void calcPlaW() {
+    state.plaW = tanf(state.fov / 2) * state.plaDist * 2;
+}
+
+void changeFov(float fov) {
+    state.fov = fov;
+    calcPlaW();
+}
 
 bool collisionCheck (float x, float y) {
     if (map[(int)x + ((int)y * MAP_SIZE)] == 0) {return false;}
@@ -304,10 +315,12 @@ void drawRayDDA() {
     float pCos = cosf(player.rot);
     float pTan = pSin / pCos;
     float pCot = pCos / pSin;
+    
     float xStep = sqrtf(1 + pTan * pTan);
     float yStep = sqrtf(1 + pCot * pCot);
     int mapX = player.x;
     int mapY = player.y;
+    
     float rayX;
     float rayY;
     int xDir;
@@ -365,11 +378,12 @@ void drawRaysDDA() {
         float pCos = cosf(player.rot + fovOffset + (fovStep * x));
         float pTan = pSin / pCos;
         float pCot = pCos / pSin;
+        
         float xStep = sqrtf(1 + pTan * pTan);
         float yStep = sqrtf(1 + pCot * pCot);
-
         int mapX = player.x;
         int mapY = player.y;
+        
         float rayX;
         float rayY;
         int xDir;
@@ -398,9 +412,9 @@ void drawRaysDDA() {
             float posY = player.y + (dist / yStep) * yDir;
 
             //drawPoint(posX, posY, 0xFFFFFFFF);
-            if (x == 0 || x == SCREEN_WIDTH - 1) {
-                drawPoint(posX, posY, 0xFFFFFFFF);
-            }
+            //if (x == 0 || x == SCREEN_WIDTH - 1) {
+            //    drawPoint(posX, posY, 0xFFFFFFFF);
+            //}
 
             int wallType = map[mapX + (mapY * MAP_SIZE)];
             if (wallType != 0) {
@@ -423,7 +437,7 @@ void drawRaysDDA() {
     }
 }
 
-void drawWolfDDA() {
+void drawFishDDA() {
     float fovOffset = (state.fov / 2) * -1; //starting fov offset
     float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
 
@@ -432,11 +446,12 @@ void drawWolfDDA() {
         float pCos = cosf(player.rot + fovOffset + (fovStep * x));
         float pTan = pSin / pCos;
         float pCot = pCos / pSin;
+        
         float xStep = sqrtf(1 + pTan * pTan);
         float yStep = sqrtf(1 + pCot * pCot);
-
         int mapX = player.x;
         int mapY = player.y;
+        
         float rayX;
         float rayY;
         int xDir;
@@ -475,9 +490,6 @@ void drawWolfDDA() {
                     wallHeight = SCREEN_HEIGHT / dist;
                 }
 
-                //drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
-                //break;
-
                 if (last) {
                     drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
                 }
@@ -502,6 +514,93 @@ void drawWolfDDA() {
             }
         }
         fovOffset += fovStep;
+    }
+}
+
+void drawWolfDDA() {
+    float fovOffset = (state.fov / 2) * -1; //starting fov offset
+    float plaXStep = state.plaW / (SCREEN_WIDTH - 1);
+
+    for (int x = 0; x < SCREEN_WIDTH; x += 1) {
+        float plaX = x * plaXStep;
+        float plaAng = atanf((((state.plaW * -1) / 2) + plaX) / state.plaDist);
+
+        float pSin = sinf(player.rot + plaAng);
+        float pCos = cosf(player.rot + plaAng);
+        
+        float pTan = pSin / pCos;
+        float pCot = pCos / pSin;
+        
+        float xStep = sqrtf(1 + pTan * pTan);
+        float yStep = sqrtf(1 + pCot * pCot);
+        int mapX = player.x;
+        int mapY = player.y;
+
+        float rayX;
+        float rayY;
+        int xDir;   //direction ray is going
+        int yDir;
+
+        if (pCos < 0) {
+            xDir = -1;
+            rayX = (player.x - (int)player.x) * xStep;
+        }
+        else {
+            xDir = 1;
+            rayX = (1 + (int)player.x - player.x) * xStep;
+        }
+        if (pSin < 0) {
+            yDir = -1;
+            rayY = (player.y - (int)player.y) * yStep;
+        }
+        else {
+            yDir = 1;
+            rayY = (1 + (int)player.y - player.y) * yStep;
+        }
+
+        float dist = 0;
+        bool last = 0;
+        while (true) {
+            float posX = player.x + (dist / xStep) * xDir;
+            float posY = player.y + (dist / yStep) * yDir;
+
+            int wallType = map[mapX + (mapY * MAP_SIZE)];
+            if (wallType != 0) {
+                int wallHeight;
+
+                float pDist = dist * cosf(plaAng);
+
+
+                if (pDist < 1) {
+                    wallHeight = SCREEN_HEIGHT;
+                }
+                else {
+                    wallHeight = SCREEN_HEIGHT / pDist;
+                }
+
+                if (last) {
+                    drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
+                }
+                else {
+                    drawWallSlice(x, wallHeight, wallType, 0xCCCCCCFF);
+                }
+                
+                break;
+            }
+
+            if (rayX < rayY) {
+                dist = rayX;
+                rayX += xStep;
+                mapX += xDir;
+                last = 0;
+            }
+            else {
+                dist = rayY;
+                rayY += yStep;
+                mapY += yDir;
+                last = 1;
+            }
+        }
     }
 }
 
@@ -548,12 +647,13 @@ int main(int argc, char const *argv[])
     player.rot = 0;
     player.speed = 0.05;
     player.rSpeed = 0.05;
-    player.noclip = false;
+    player.noclip = true;
     //player.rX = -0.5;
     //player.rY = 0.5;
     
     state.rayStepSize = 0.01;
-    state.fov = ((M_PI * 2) / 4); //90
+    state.plaDist = 1;
+    changeFov((M_PI * 2) / 4);
 
     bool showMap = false;
     bool rJP = false;
@@ -628,4 +728,3 @@ int main(int argc, char const *argv[])
 
     exit(EXIT_SUCCESS);
 }
-
