@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <time.h>
 
 #ifdef __WIN64
 #define SDL_MAIN_HANDLED
@@ -52,18 +53,21 @@ SDL_Renderer *renderer;
 bool quit = false;
 
 struct {
-    float fov; //in radians rn
-    float plaDist; //plane dist from player
-    float rayStepSize; //smaller means smaller ray steps (more accurate)
-    float plaW; //plane width
+    double fov; //in radians rn
+    double plaDist; //plane dist from player
+    double rayStepSize; //smaller means smaller ray steps (more accurate)
+    double plaW; //plane width
+    clock_t oldTime;
+    clock_t time;
+    double delta;
 } state;
 
 struct {
-    float x;
-    float y;
-    float rot;
-    float speed;
-    float rSpeed;
+    double x;
+    double y;
+    double rot;
+    double speed;
+    double rSpeed;
     bool noclip;
 } player;
 
@@ -73,7 +77,7 @@ uint32_t setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     return col;
 }
 
-float getDist(float x1, float y1, float x2, float y2) {
+double getDist(double x1, double y1, double x2, double y2) {
     return sqrtf(( powf(x2 - x1, 2) ) + ( powf(y2 - y1, 2) ));
 }
 
@@ -81,18 +85,18 @@ void calcPlaW() {
     state.plaW = tanf(state.fov / 2) * state.plaDist * 2;
 }
 
-void changeFov(float fov) {
+void changeFov(double fov) {
     state.fov = fov;
     calcPlaW();
 }
 
-bool collisionCheck (float x, float y) {
+bool collisionCheck (double x, double y) {
     if (map[(int)x + ((int)y * MAP_SIZE)] == 0) {return false;}
     return true;
 }
 
-void playerRotate(float rSpeed) {
-    player.rot += rSpeed;
+void playerRotate(double rSpeed) {
+    player.rot += rSpeed * state.delta;
     if (player.rot > (M_PI * 2)) {
         player.rot = 0;
     }
@@ -101,76 +105,24 @@ void playerRotate(float rSpeed) {
     }
 }
 
-void playerForward(float speed) {
-    float xStep = cosf(player.rot) * speed;
-    float yStep = sinf(player.rot) * speed;
-
-    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
-        player.x += xStep;
-        player.y += yStep;
-    }
-    else {
-        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
-            player.x += xStep;
-        }
-        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
-            player.y += yStep;
-        }
-    }
+void playerForward(double speed) {
+    player.x += cosf(player.rot) * speed * state.delta;
+    player.y += sinf(player.rot) * speed * state.delta;
 }
 
-void playerbackward(float speed) {
-    float xStep = cosf(player.rot) * speed * -1;
-    float yStep = sinf(player.rot) * speed * -1;
-
-    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
-        player.x += xStep;
-        player.y += yStep;
-    }
-    else {
-        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
-            player.x += xStep;
-        }
-        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
-            player.y += yStep;
-        }
-    }
+void playerbackward(double speed) {
+    player.x += cosf(player.rot) * speed * -1 * state.delta;
+    player.y += sinf(player.rot) * speed * -1 * state.delta;
 }
 
-void playerLeft(float speed) {
-    float xStep = sinf(player.rot) * speed;
-    float yStep = cosf(player.rot) * speed * -1;
-
-    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
-        player.x += xStep;
-        player.y += yStep;
-    }
-    else {
-        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
-            player.x += xStep;
-        }
-        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
-            player.y += yStep;
-        }
-    }
+void playerLeft(double speed) {
+    player.x += sinf(player.rot) * speed * state.delta;
+    player.y += cosf(player.rot) * speed * -1 * state.delta;
 }
 
-void playerRight(float speed) {
-    float xStep = sinf(player.rot) * speed * -1;
-    float yStep = cosf(player.rot) * speed;
-
-    if (!collisionCheck(player.x + xStep, player.y + yStep) || player.noclip) {
-        player.x += xStep;
-        player.y += yStep;
-    }
-    else {
-        if (!collisionCheck(player.x + xStep, player.y) || player.noclip) {
-            player.x += xStep;
-        }
-        if (!collisionCheck(player.x, player.y + yStep) || player.noclip) {
-            player.y += yStep;
-        }
-    }
+void playerRight(double speed) {
+    player.x += sinf(player.rot) * speed * -1 * state.delta;
+    player.y += cosf(player.rot) * speed * state.delta;
 }
 
 void fillScreen(uint32_t col) {
@@ -185,9 +137,9 @@ void drawVertLine(int x, int startY, int endY, uint32_t col) {
     }
 }
 
-void drawPoint(float x, float y, uint32_t col) {
-    float screenX = (x * SCREEN_WIDTH) / MAP_SIZE;
-    float screenY = (y * SCREEN_HEIGHT) / MAP_SIZE;
+void drawPoint(double x, double y, uint32_t col) {
+    double screenX = (x * SCREEN_WIDTH) / MAP_SIZE;
+    double screenY = (y * SCREEN_HEIGHT) / MAP_SIZE;
 
     pixels[(int)screenX + ((int)screenY * SCREEN_WIDTH)] = col;
 }
@@ -266,20 +218,20 @@ void drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
     drawVertLine(x, (wallStart + wallHeight), SCREEN_HEIGHT, floorColor);
 }
 
-void castRayDDA(float rayAng, float startX, float startY, float* posX, float* posY, float* dist, int* wallType, bool* lastWasX) {
-    float pSin = sinf(rayAng);
-    float pCos = cosf(rayAng);
+void castRayDDA(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
+    double pSin = sinf(rayAng);
+    double pCos = cosf(rayAng);
 
-    float pTan = pSin / pCos;
-    float pCot = pCos / pSin;
+    double pTan = pSin / pCos;
+    double pCot = pCos / pSin;
 
-    float xStep = sqrtf(1 + pTan * pTan);
-    float yStep = sqrtf(1 + pCot * pCot);
+    double xStep = sqrtf(1 + pTan * pTan);
+    double yStep = sqrtf(1 + pCot * pCot);
     int mapX = startX;
     int mapY = startY;
 
-    float rayX;
-    float rayY;
+    double rayX;
+    double rayY;
     int xDir;   //direction ray is going
     int yDir;
 
@@ -300,11 +252,9 @@ void castRayDDA(float rayAng, float startX, float startY, float* posX, float* po
         rayY = (1 + (int)startY - startY) * yStep;
     }
 
-    float curDist = 0;
+    double curDist = 0;
     bool last = 0;
     while (true) {
-
-
         int wall = map[mapX + (mapY * MAP_SIZE)];
         if (wall != 0) {
             *posX = startX + (curDist / xStep) * xDir;
@@ -330,20 +280,20 @@ void castRayDDA(float rayAng, float startX, float startY, float* posX, float* po
     }
 }
 
-void castRayDDADraw(float rayAng, float startX, float startY, float* posX, float* posY, float* dist, int* wallType, bool* lastWasX) {
-    float pSin = sinf(rayAng);
-    float pCos = cosf(rayAng);
+void castRayDDADraw(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
+    double pSin = sinf(rayAng);
+    double pCos = cosf(rayAng);
 
-    float pTan = pSin / pCos;
-    float pCot = pCos / pSin;
+    double pTan = pSin / pCos;
+    double pCot = pCos / pSin;
 
-    float xStep = sqrtf(1 + pTan * pTan);
-    float yStep = sqrtf(1 + pCot * pCot);
+    double xStep = sqrtf(1 + pTan * pTan);
+    double yStep = sqrtf(1 + pCot * pCot);
     int mapX = startX;
     int mapY = startY;
 
-    float rayX;
-    float rayY;
+    double rayX;
+    double rayY;
     int xDir;   //direction ray is going
     int yDir;
 
@@ -364,11 +314,11 @@ void castRayDDADraw(float rayAng, float startX, float startY, float* posX, float
         rayY = (1 + (int)startY - startY) * yStep;
     }
 
-    float curDist = 0;
+    double curDist = 0;
     bool last = 0;
     while (true) {
-        float x = startX + (curDist / xStep) * xDir;
-        float y = startY + (curDist / yStep) * yDir;
+        double x = startX + (curDist / xStep) * xDir;
+        double y = startY + (curDist / yStep) * yDir;
 
         drawPoint(x, y, 0xFFFFFFFF);
         int wall = map[mapX + (mapY * MAP_SIZE)];
@@ -397,9 +347,9 @@ void castRayDDADraw(float rayAng, float startX, float startY, float* posX, float
 }
 
 void drawRayDDA() {
-    float posX;
-    float posY;
-    float dist;
+    double posX;
+    double posY;
+    double dist;
     int wallType;
     bool lastWasX;
 
@@ -408,15 +358,15 @@ void drawRayDDA() {
 
 void drawRaysDDA() {
 
-    float fovOffset = (state.fov / 2) * -1; //starting fov offset
-    float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
+    double fovOffset = (state.fov / 2) * -1; //starting fov offset
+    double fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
 
     for (int x = 0; x < SCREEN_WIDTH; x += 1) {
-        float plaAng = player.rot + fovOffset + (fovStep * x);
+        double plaAng = player.rot + fovOffset + (fovStep * x);
 
-        float posX;
-        float posY;
-        float dist;
+        double posX;
+        double posY;
+        double dist;
         int wallType;
         bool lastWasX;
 
@@ -433,15 +383,15 @@ void drawRaysDDA() {
 }
 
 void drawFishDDA() {
-    float fovOffset = (state.fov / 2) * -1; //starting fov offset
-    float fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
+    double fovOffset = (state.fov / 2) * -1; //starting fov offset
+    double fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
 
     for (int x = 0; x < SCREEN_WIDTH; x += 1) {
-        float plaAng = player.rot + fovOffset + (fovStep * x);
+        double plaAng = player.rot + fovOffset + (fovStep * x);
 
-        float posX;
-        float posY;
-        float dist;
+        double posX;
+        double posY;
+        double dist;
         int wallType;
         bool lastWasX;
 
@@ -467,22 +417,22 @@ void drawFishDDA() {
 }
 
 void drawWolfDDA() {
-    float plaXStep = state.plaW / (SCREEN_WIDTH - 1);
+    double plaXStep = state.plaW / (SCREEN_WIDTH - 1);
 
     for (int x = 0; x < SCREEN_WIDTH; x += 1) {
-        float plaX = x * plaXStep;
-        float plaAng = atanf((((state.plaW * -1) / 2) + plaX) / state.plaDist) + player.rot;
+        double plaX = x * plaXStep;
+        double plaAng = atanf((((state.plaW * -1) / 2) + plaX) / state.plaDist) + player.rot;
 
-        float posX;
-        float posY;
-        float dist;
+        double posX;
+        double posY;
+        double dist;
         int wallType;
         bool lastWasX;
 
         castRayDDA(plaAng, player.x, player.y, &posX, &posY, &dist, &wallType, &lastWasX);
 
         int wallHeight;
-        float pDist = dist * cosf(plaAng - player.rot);
+        double pDist = dist * cosf(plaAng - player.rot);
 
         if (pDist < 1) {
             wallHeight = SCREEN_HEIGHT;
@@ -514,12 +464,12 @@ int main(int argc, char const *argv[]) {
         SDL_WINDOWPOS_CENTERED_DISPLAY(0), 
         WINDOW_WIDTH, 
         WINDOW_HEIGHT,
-        SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN);
+        SDL_WINDOW_ALLOW_HIGHDPI); // | SDL_WINDOW_FULLSCREEN
     if(!window) {
         fprintf(stderr, "failed to create SDL window: %s\n", SDL_GetError());
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, 0); //SDL_RENDERER_PRESENTVSYNC
     if(!renderer) {
         fprintf(stderr, "failed to create SDL renderer: %s\n", SDL_GetError());
     }
@@ -538,13 +488,14 @@ int main(int argc, char const *argv[]) {
     player.x = 4;
     player.y = 9;
     player.rot = 0;
-    player.speed = 0.05;
-    player.rSpeed = 0.05;
-    player.noclip = true;
-    
+    player.speed = 3;
+    player.rSpeed = 3;
+    player.noclip = false;
+
     state.rayStepSize = 0.01;
     state.plaDist = 1;
-    changeFov((M_PI * 2) / 4);
+    state.time = clock();
+    changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 = 90
 
     bool showMap = false;
     bool fishEye = false;
@@ -552,6 +503,12 @@ int main(int argc, char const *argv[]) {
     bool fJP = false;
 
     while (!quit){
+        state.oldTime = state.time;
+        state.time = clock();
+        state.delta = (double)(state.time - state.oldTime) / CLOCKS_PER_SEC;
+        //printf("%f\n", state.delta);
+        printf("%ld\n", state.time - state.oldTime);
+
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
