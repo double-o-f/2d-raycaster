@@ -18,7 +18,7 @@
 
 uint32_t voidColor = 0x000000FF;
 uint32_t color0 = 0x222222FF;
-uint32_t skyColor = 0x00CCEEFF;
+uint32_t skyColor = 0x110033FF;
 uint32_t floorColor = 0x222222FF;
 uint32_t color1 = 0x990044FF;
 uint32_t color2 = 0x004499FF;
@@ -53,10 +53,12 @@ SDL_Renderer *renderer;
 bool quit = false;
 
 struct {
+    double rayStepSize; //smaller means smaller ray steps (more accurate)
+
     double fov; //in radians rn
     double plaDist; //plane dist from player
-    double rayStepSize; //smaller means smaller ray steps (more accurate)
     double plaW; //plane width
+
     clock_t oldTime;
     clock_t time;
     double delta;
@@ -65,9 +67,17 @@ struct {
 struct {
     double x;
     double y;
+    //double speed;
+
+    double maxVelo;
+    double xVelo;
+    double yVelo;
+    double accel;
+    double friction;
+
     double rot;
-    double speed;
     double rSpeed;
+
     bool noclip;
 } player;
 
@@ -81,14 +91,39 @@ double getDist(double x1, double y1, double x2, double y2) {
     return sqrtf(( powf(x2 - x1, 2) ) + ( powf(y2 - y1, 2) ));
 }
 
+int getSign(double num) {
+    if (num > 0) {
+        return 1;
+    }
+    else if (num < 0) {
+        return -1;
+    }
+    return 0;
+}
+
 void calcPlaW() {
-    state.plaW = tanf(state.fov / 2) * state.plaDist * 2;
+    state.plaW = tan(state.fov / 2) * state.plaDist * 2;
 }
 
 void changeFov(double fov) {
     state.fov = fov;
     calcPlaW();
 }
+
+void zeroOut(double* pVal, double step) {
+    if (*pVal == 0) {return;}
+    double val = *pVal;
+    double oldVal = val;
+    step *= getSign(val) * -1;
+    val += step;
+    if (getSign(val) != getSign(oldVal)) {
+        val = 0;
+    }
+
+    *pVal = val;
+
+}
+
 
 bool collisionCheck (double x, double y) {
     if (map[(int)x + ((int)y * MAP_SIZE)] == 0) {return false;}
@@ -105,25 +140,84 @@ void playerRotate(double rSpeed) {
     }
 }
 
-void playerForward(double speed) {
-    player.x += cosf(player.rot) * speed * state.delta;
-    player.y += sinf(player.rot) * speed * state.delta;
+void plaMvForward(double speed) {
+    player.x += cos(player.rot) * speed * state.delta;
+    player.y += sin(player.rot) * speed * state.delta;
 }
 
-void playerbackward(double speed) {
-    player.x += cosf(player.rot) * speed * -1 * state.delta;
-    player.y += sinf(player.rot) * speed * -1 * state.delta;
+void plaMvbackward(double speed) {
+    player.x += cos(player.rot) * speed * -1 * state.delta;
+    player.y += sin(player.rot) * speed * -1 * state.delta;
 }
 
-void playerLeft(double speed) {
-    player.x += sinf(player.rot) * speed * state.delta;
-    player.y += cosf(player.rot) * speed * -1 * state.delta;
+void plaMvLeft(double speed) {
+    player.x += sin(player.rot) * speed * state.delta;
+    player.y += cos(player.rot) * speed * -1 * state.delta;
 }
 
-void playerRight(double speed) {
-    player.x += sinf(player.rot) * speed * -1 * state.delta;
-    player.y += cosf(player.rot) * speed * state.delta;
+void plaMvRight(double speed) {
+    player.x += sin(player.rot) * speed * -1 * state.delta;
+    player.y += cos(player.rot) * speed * state.delta;
 }
+
+void playerDir(double newXVelo, double newYVelo) {
+    if (fabs(player.xVelo) > player.maxVelo) {
+        if (fabs(newXVelo) < fabs(player.xVelo)) {
+            player.xVelo = newXVelo;
+        }
+    }
+    else {
+        player.xVelo = newXVelo;
+    }
+
+    if (fabs(player.yVelo) > player.maxVelo) {
+        if (fabs(newYVelo) < fabs(player.yVelo)) {
+            player.yVelo = newYVelo;
+        }
+    }
+    else {
+        player.yVelo = newYVelo;
+    }
+}
+
+void playerForward(double accel) {
+    double newXVelo = player.xVelo + cos(player.rot) * accel * state.delta;
+    double newYVelo = player.yVelo + sin(player.rot) * accel * state.delta;
+
+    playerDir(newXVelo, newYVelo);
+}
+
+void playerbackward(double accel) {
+    double newXVelo = player.xVelo + cos(player.rot) * accel * -1 * state.delta;
+    double newYVelo = player.yVelo + sin(player.rot) * accel * -1 * state.delta;
+
+    playerDir(newXVelo, newYVelo);
+}
+
+void playerLeft(double accel) {
+    double newXVelo = player.xVelo + sin(player.rot) * accel * state.delta;
+    double newYVelo = player.yVelo + cos(player.rot) * accel * -1 * state.delta;
+
+    playerDir(newXVelo, newYVelo);
+}
+
+void playerRight(double accel) {
+    double newXVelo = player.xVelo + sin(player.rot) * accel * -1 * state.delta;
+    double newYVelo = player.yVelo + cos(player.rot) * accel * state.delta;
+
+    playerDir(newXVelo, newYVelo);
+}
+
+void playerMove() {
+    player.x += player.xVelo;
+    player.y += player.yVelo;
+}
+
+void playerFriction(double friction) {
+    zeroOut(&player.xVelo, friction * state.delta);
+    zeroOut(&player.yVelo, friction * state.delta);
+}
+
 
 void fillScreen(uint32_t col) {
     for (int i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH); i += 1) {
@@ -219,8 +313,8 @@ void drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
 }
 
 void castRayDDA(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
-    double pSin = sinf(rayAng);
-    double pCos = cosf(rayAng);
+    double pSin = sin(rayAng);
+    double pCos = cos(rayAng);
 
     double pTan = pSin / pCos;
     double pCot = pCos / pSin;
@@ -281,8 +375,8 @@ void castRayDDA(double rayAng, double startX, double startY, double* posX, doubl
 }
 
 void castRayDDADraw(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
-    double pSin = sinf(rayAng);
-    double pCos = cosf(rayAng);
+    double pSin = sin(rayAng);
+    double pCos = cos(rayAng);
 
     double pTan = pSin / pCos;
     double pCot = pCos / pSin;
@@ -357,7 +451,6 @@ void drawRayDDA() {
 }
 
 void drawRaysDDA() {
-
     double fovOffset = (state.fov / 2) * -1; //starting fov offset
     double fovStep = (state.fov / 2) / SCREEN_WIDTH;  //move ray angle by this much every pixel
 
@@ -369,6 +462,8 @@ void drawRaysDDA() {
         double dist;
         int wallType;
         bool lastWasX;
+
+        castRayDDADraw(plaAng, player.x, player.y, &posX, &posY, &dist, &wallType, &lastWasX);
 
         if (x == 0 || x == SCREEN_WIDTH - 1) {
             castRayDDADraw(plaAng, player.x, player.y, &posX, &posY, &dist, &wallType, &lastWasX);
@@ -421,7 +516,7 @@ void drawWolfDDA() {
 
     for (int x = 0; x < SCREEN_WIDTH; x += 1) {
         double plaX = x * plaXStep;
-        double plaAng = atanf((((state.plaW * -1) / 2) + plaX) / state.plaDist) + player.rot;
+        double plaAng = atan((((state.plaW * -1) / 2) + plaX) / state.plaDist) + player.rot;
 
         double posX;
         double posY;
@@ -432,7 +527,7 @@ void drawWolfDDA() {
         castRayDDA(plaAng, player.x, player.y, &posX, &posY, &dist, &wallType, &lastWasX);
 
         int wallHeight;
-        double pDist = dist * cosf(plaAng - player.rot);
+        double pDist = dist * cos(plaAng - player.rot);
 
         if (pDist < 1) {
             wallHeight = SCREEN_HEIGHT;
@@ -487,15 +582,23 @@ int main(int argc, char const *argv[]) {
 
     player.x = 4;
     player.y = 9;
+    //player.speed = 3;
+
+    player.xVelo = 0;
+    player.yVelo = 0;
+    player.accel = 0.4;
+    player.friction = 0.2;
+    player.maxVelo = 0.06;
+
     player.rot = 0;
-    player.speed = 3;
     player.rSpeed = 3;
+
     player.noclip = false;
 
     state.rayStepSize = 0.01;
     state.plaDist = 1;
     state.time = clock();
-    changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 = 90
+    changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
 
     bool showMap = false;
     bool fishEye = false;
@@ -507,7 +610,7 @@ int main(int argc, char const *argv[]) {
         state.time = clock();
         state.delta = (double)(state.time - state.oldTime) / CLOCKS_PER_SEC;
         //printf("%f\n", state.delta);
-        printf("%ld\n", state.time - state.oldTime);
+        //printf("%ld\n", state.time - state.oldTime);
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -517,24 +620,24 @@ int main(int argc, char const *argv[]) {
         }
 
         const uint8_t *keystate = SDL_GetKeyboardState(NULL);
+        if (keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_W]) {
+            playerForward(player.accel);
+        }
+        if (keystate[SDL_SCANCODE_DOWN] || keystate[SDL_SCANCODE_S]) {
+            playerbackward(player.accel);
+        }
+        if (keystate[SDL_SCANCODE_A]) {
+            playerLeft(player.accel);
+        }
+        if (keystate[SDL_SCANCODE_D]) {
+            playerRight(player.accel);
+        }
+
         if (keystate[SDL_SCANCODE_LEFT]) {
             playerRotate(player.rSpeed * -1);
         }
         if (keystate[SDL_SCANCODE_RIGHT]) {
             playerRotate(player.rSpeed);
-        }
-        if (keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_W]) {
-            playerForward(player.speed);
-        }
-        if (keystate[SDL_SCANCODE_DOWN] || keystate[SDL_SCANCODE_S]) {
-            playerbackward(player.speed);
-        }
-
-        if (keystate[SDL_SCANCODE_A]) {
-            playerLeft(player.speed);
-        }
-        if (keystate[SDL_SCANCODE_D]) {
-            playerRight(player.speed);
         }
 
         if (keystate[SDL_SCANCODE_R]) {
@@ -558,6 +661,9 @@ int main(int argc, char const *argv[]) {
             fJP = false;
         }
 
+        playerMove();
+        printf("%f, %f\n", player.xVelo, player.yVelo);
+        playerFriction(player.friction);
 
         // /memset(pixels, 0, sizeof(pixels));
         if (showMap) {
