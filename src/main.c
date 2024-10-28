@@ -67,7 +67,7 @@ struct {
 struct {
     double x;
     double y;
-    //double speed;
+    double speed;
 
     double maxVelo;
     double xVelo;
@@ -161,49 +161,56 @@ void plaMvRight(double speed) {
 }
 
 void playerDir(double newXVelo, double newYVelo) {
-    if (fabs(player.xVelo) > player.maxVelo) {
-        if (fabs(newXVelo) < fabs(player.xVelo)) {
-            player.xVelo = newXVelo;
-        }
-    }
-    else {
-        player.xVelo = newXVelo;
-    }
+    player.xVelo = newXVelo;
+    player.yVelo = newYVelo;
 
-    if (fabs(player.yVelo) > player.maxVelo) {
-        if (fabs(newYVelo) < fabs(player.yVelo)) {
-            player.yVelo = newYVelo;
-        }
-    }
-    else {
-        player.yVelo = newYVelo;
+    if (fabs(player.xVelo) + fabs(player.yVelo) > player.maxVelo) {
+        double norm = fabs(player.xVelo) + fabs(player.yVelo);
+        player.xVelo = (player.xVelo / norm) * player.maxVelo;
+        player.yVelo = (player.yVelo / norm) * player.maxVelo;
     }
 }
 
 void playerForward(double accel) {
-    double newXVelo = player.xVelo + cos(player.rot) * accel * state.delta;
-    double newYVelo = player.yVelo + sin(player.rot) * accel * state.delta;
+    double pSin = sin(player.rot);
+    double pCos = cos(player.rot);
+    double norm = fabs(pSin) + fabs(pCos);
+
+    double newXVelo = player.xVelo + (pCos / norm) * accel * state.delta;
+    double newYVelo = player.yVelo + (pSin / norm) * accel * state.delta;
 
     playerDir(newXVelo, newYVelo);
 }
 
 void playerbackward(double accel) {
-    double newXVelo = player.xVelo + cos(player.rot) * accel * -1 * state.delta;
-    double newYVelo = player.yVelo + sin(player.rot) * accel * -1 * state.delta;
+    double pSin = sin(player.rot);
+    double pCos = cos(player.rot);
+    double norm = fabs(pSin) + fabs(pCos);
+    
+    double newXVelo = player.xVelo + (pCos / norm) * accel * state.delta * -1;
+    double newYVelo = player.yVelo + (pSin / norm) * accel * state.delta * -1;
 
     playerDir(newXVelo, newYVelo);
 }
 
 void playerLeft(double accel) {
-    double newXVelo = player.xVelo + sin(player.rot) * accel * state.delta;
-    double newYVelo = player.yVelo + cos(player.rot) * accel * -1 * state.delta;
+    double pSin = sin(player.rot);
+    double pCos = cos(player.rot);
+    double norm = fabs(pSin) + fabs(pCos);
+
+    double newXVelo = player.xVelo + (pSin / norm) * accel * state.delta;
+    double newYVelo = player.yVelo + (pCos / norm) * accel * state.delta * -1;
 
     playerDir(newXVelo, newYVelo);
 }
 
 void playerRight(double accel) {
-    double newXVelo = player.xVelo + sin(player.rot) * accel * -1 * state.delta;
-    double newYVelo = player.yVelo + cos(player.rot) * accel * state.delta;
+    double pSin = sin(player.rot);
+    double pCos = cos(player.rot);
+    double norm = fabs(pSin) + fabs(pCos);
+
+    double newXVelo = player.xVelo + (pSin / norm) * accel * state.delta * -1;
+    double newYVelo = player.yVelo + (pCos / norm) * accel * state.delta;
 
     playerDir(newXVelo, newYVelo);
 }
@@ -214,8 +221,10 @@ void playerMove() {
 }
 
 void playerFriction(double friction) {
-    zeroOut(&player.xVelo, friction * state.delta);
-    zeroOut(&player.yVelo, friction * state.delta);
+    double norm = fabs(player.xVelo) + fabs(player.yVelo);
+
+    zeroOut(&player.xVelo, friction * fabs(player.xVelo / norm) * state.delta);
+    zeroOut(&player.yVelo, friction * fabs(player.yVelo / norm) * state.delta);
 }
 
 
@@ -307,6 +316,14 @@ void drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
 
     col &= bright;
     int wallStart = (SCREEN_HEIGHT - wallHeight) / 2;
+    //wallStart -= (int)(sin((player.xVelo + player.yVelo) * 10) * 100);
+    //if (wallStart < 0) {
+    //    wallHeight += wallStart;
+    //    wallStart = 0;
+    //}
+    //if (wallStart + wallHeight >= SCREEN_HEIGHT) {
+    //    wallHeight = SCREEN_HEIGHT - wallStart;
+    //}
     drawVertLine(x, 0, wallStart, skyColor);
     drawVertLine(x, wallStart, (wallStart + wallHeight), col);
     drawVertLine(x, (wallStart + wallHeight), SCREEN_HEIGHT, floorColor);
@@ -582,13 +599,13 @@ int main(int argc, char const *argv[]) {
 
     player.x = 4;
     player.y = 9;
-    //player.speed = 3;
+    player.speed = 3;
 
     player.xVelo = 0;
     player.yVelo = 0;
-    player.accel = 0.4;
+    player.accel = 0.4; //0.4;
     player.friction = 0.2;
-    player.maxVelo = 0.06;
+    player.maxVelo = 0.1;
 
     player.rot = 0;
     player.rSpeed = 3;
@@ -662,10 +679,10 @@ int main(int argc, char const *argv[]) {
         }
 
         playerMove();
-        printf("%f, %f\n", player.xVelo, player.yVelo);
+        //printf("%f, %f\n", player.xVelo, player.yVelo);
         playerFriction(player.friction);
 
-        // /memset(pixels, 0, sizeof(pixels));
+        //memset(pixels, 0, sizeof(pixels));
         if (showMap) {
             drawMap();
             drawPoint(player.x, player.y, 0xFFFFFFFF);
