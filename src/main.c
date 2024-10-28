@@ -166,10 +166,28 @@ void playerDir(double newXVelo, double newYVelo) {
     player.xVelo = newXVelo;
     player.yVelo = newYVelo;
 
-    if (fabs(player.xVelo) + fabs(player.yVelo) > player.maxVelo) {
-        double norm = fabs(player.xVelo) + fabs(player.yVelo);
-        player.xVelo = (player.xVelo / norm) * player.maxVelo;
-        player.yVelo = (player.yVelo / norm) * player.maxVelo;
+
+    double pSin = sin(player.rot);
+    double pCos = cos(player.rot);
+    double rNorm = fabs(pSin) + fabs(pCos);
+
+    double rXVelo;
+    double rYVelo;
+
+    rXVelo = player.xVelo * (pCos / rNorm);
+    rYVelo = player.yVelo * (pSin / rNorm);
+    if (fabs(rXVelo) + fabs(rYVelo) > player.maxVelo) {
+        double vNorm = fabs(rXVelo) + fabs(rYVelo);
+        player.xVelo = (player.xVelo / vNorm) * player.maxVelo;
+        player.yVelo = (player.yVelo / vNorm) * player.maxVelo;
+    }
+
+    rXVelo = player.xVelo * (pSin / rNorm);
+    rYVelo = player.yVelo * (pCos / rNorm);
+    if (fabs(rXVelo) + fabs(rYVelo) > player.maxVelo) {
+        double vNorm = fabs(rXVelo) + fabs(rYVelo);
+        player.xVelo = (player.xVelo / vNorm) * player.maxVelo;
+        player.yVelo = (player.yVelo / vNorm) * player.maxVelo;
     }
 }
 
