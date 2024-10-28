@@ -62,6 +62,8 @@ struct {
     clock_t oldTime;
     clock_t time;
     double delta;
+
+    double fpsCap;
 } state;
 
 struct {
@@ -581,7 +583,7 @@ int main(int argc, char const *argv[]) {
         fprintf(stderr, "failed to create SDL window: %s\n", SDL_GetError());
     }
 
-    renderer = SDL_CreateRenderer(window, -1, 0); //SDL_RENDERER_PRESENTVSYNC
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC); //SDL_RENDERER_PRESENTVSYNC
     if(!renderer) {
         fprintf(stderr, "failed to create SDL renderer: %s\n", SDL_GetError());
     }
@@ -612,6 +614,7 @@ int main(int argc, char const *argv[]) {
 
     player.noclip = false;
 
+    state.fpsCap = (1000000 / 60);
     state.rayStepSize = 0.01;
     state.plaDist = 1;
     state.time = clock();
@@ -623,10 +626,13 @@ int main(int argc, char const *argv[]) {
     bool fJP = false;
 
     while (!quit){
-        state.oldTime = state.time;
+        
+        while (clock() - state.time < state.fpsCap) {}
+        //printf("%ld\n", clock() - state.time);
+        state.delta = (double)(clock() - state.time) / CLOCKS_PER_SEC; //1000000    
         state.time = clock();
-        state.delta = (double)(state.time - state.oldTime) / CLOCKS_PER_SEC;
-        //printf("%f\n", state.delta);
+        
+        printf("%f\n", 1/state.delta);
         //printf("%ld\n", state.time - state.oldTime);
 
         SDL_Event event;
