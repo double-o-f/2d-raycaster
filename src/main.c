@@ -53,13 +53,10 @@ SDL_Renderer *renderer;
 bool quit = false;
 
 struct {
-    double rayStepSize; //smaller means smaller ray steps (more accurate)
-
     double fov; //in radians rn
     double plaDist; //plane dist from player
     double plaW; //plane width
 
-    clock_t oldTime;
     clock_t time;
     double delta;
 
@@ -69,7 +66,6 @@ struct {
 struct {
     double x;
     double y;
-    double speed;
 
     double maxVelo;
     double xVelo;
@@ -79,8 +75,13 @@ struct {
 
     double rot;
     double rSpeed;
+    double pSin;
+    double pCos;
+    double nSin;
+    double nCos;
 
     bool noclip;
+    double ncSpeed;
 } player;
 
 
@@ -101,15 +102,6 @@ int getSign(double num) {
         return -1;
     }
     return 0;
-}
-
-void calcPlaW() {
-    state.plaW = tan(state.fov / 2) * state.plaDist * 2;
-}
-
-void changeFov(double fov) {
-    state.fov = fov;
-    calcPlaW();
 }
 
 void zeroOut(double* pVal, double step) {
@@ -140,24 +132,30 @@ void playerRotate(double rSpeed) {
     else if (player.rot < 0) {
         player.rot = (M_PI * 2);
     }
+
+    player.pSin = sin(player.rot);
+    player.pCos = cos(player.rot);
+    double norm = fabs(player.pSin) + fabs(player.pCos);
+    player.nSin = player.pSin / norm;
+    player.nCos = player.pCos / norm;
 }
 
-void plaMvForward(double speed) {
+void playerNCForward(double speed) {
     player.x += cos(player.rot) * speed * state.delta;
     player.y += sin(player.rot) * speed * state.delta;
 }
 
-void plaMvbackward(double speed) {
+void playerNCbackward(double speed) {
     player.x += cos(player.rot) * speed * -1 * state.delta;
     player.y += sin(player.rot) * speed * -1 * state.delta;
 }
 
-void plaMvLeft(double speed) {
+void playerNCLeft(double speed) {
     player.x += sin(player.rot) * speed * state.delta;
     player.y += cos(player.rot) * speed * -1 * state.delta;
 }
 
-void plaMvRight(double speed) {
+void playerNCRight(double speed) {
     player.x += sin(player.rot) * speed * -1 * state.delta;
     player.y += cos(player.rot) * speed * state.delta;
 }
@@ -167,23 +165,19 @@ void playerDir(double newXVelo, double newYVelo) {
     player.yVelo = newYVelo;
 
 
-    double pSin = sin(player.rot);
-    double pCos = cos(player.rot);
-    double rNorm = fabs(pSin) + fabs(pCos);
-
     double rXVelo;
     double rYVelo;
 
-    rXVelo = player.xVelo * (pCos / rNorm);
-    rYVelo = player.yVelo * (pSin / rNorm);
+    rXVelo = player.xVelo * player.nCos;
+    rYVelo = player.yVelo * player.nSin;
     if (fabs(rXVelo) + fabs(rYVelo) > player.maxVelo) {
         double vNorm = fabs(rXVelo) + fabs(rYVelo);
         player.xVelo = (player.xVelo / vNorm) * player.maxVelo;
         player.yVelo = (player.yVelo / vNorm) * player.maxVelo;
     }
 
-    rXVelo = player.xVelo * (pSin / rNorm);
-    rYVelo = player.yVelo * (pCos / rNorm);
+    rXVelo = player.xVelo * player.nSin;
+    rYVelo = player.yVelo * player.nCos;
     if (fabs(rXVelo) + fabs(rYVelo) > player.maxVelo) {
         double vNorm = fabs(rXVelo) + fabs(rYVelo);
         player.xVelo = (player.xVelo / vNorm) * player.maxVelo;
@@ -192,45 +186,29 @@ void playerDir(double newXVelo, double newYVelo) {
 }
 
 void playerForward(double accel) {
-    double pSin = sin(player.rot);
-    double pCos = cos(player.rot);
-    double norm = fabs(pSin) + fabs(pCos);
-
-    double newXVelo = player.xVelo + (pCos / norm) * accel * state.delta;
-    double newYVelo = player.yVelo + (pSin / norm) * accel * state.delta;
+    double newXVelo = player.xVelo + player.nCos * accel * state.delta;
+    double newYVelo = player.yVelo + player.nSin * accel * state.delta;
 
     playerDir(newXVelo, newYVelo);
 }
 
 void playerbackward(double accel) {
-    double pSin = sin(player.rot);
-    double pCos = cos(player.rot);
-    double norm = fabs(pSin) + fabs(pCos);
-    
-    double newXVelo = player.xVelo + (pCos / norm) * accel * state.delta * -1;
-    double newYVelo = player.yVelo + (pSin / norm) * accel * state.delta * -1;
+    double newXVelo = player.xVelo + player.nCos * accel * state.delta * -1;
+    double newYVelo = player.yVelo + player.nSin * accel * state.delta * -1;
 
     playerDir(newXVelo, newYVelo);
 }
 
 void playerLeft(double accel) {
-    double pSin = sin(player.rot);
-    double pCos = cos(player.rot);
-    double norm = fabs(pSin) + fabs(pCos);
-
-    double newXVelo = player.xVelo + (pSin / norm) * accel * state.delta;
-    double newYVelo = player.yVelo + (pCos / norm) * accel * state.delta * -1;
+    double newXVelo = player.xVelo + player.nSin * accel * state.delta;
+    double newYVelo = player.yVelo + player.nCos * accel * state.delta * -1;
 
     playerDir(newXVelo, newYVelo);
 }
 
 void playerRight(double accel) {
-    double pSin = sin(player.rot);
-    double pCos = cos(player.rot);
-    double norm = fabs(pSin) + fabs(pCos);
-
-    double newXVelo = player.xVelo + (pSin / norm) * accel * state.delta * -1;
-    double newYVelo = player.yVelo + (pCos / norm) * accel * state.delta;
+    double newXVelo = player.xVelo + player.nSin * accel * state.delta * -1;
+    double newYVelo = player.yVelo + player.nCos * accel * state.delta;
 
     playerDir(newXVelo, newYVelo);
 }
@@ -245,6 +223,61 @@ void playerFriction(double friction) {
 
     zeroOut(&player.xVelo, friction * fabs(player.xVelo / norm) * state.delta);
     zeroOut(&player.yVelo, friction * fabs(player.yVelo / norm) * state.delta);
+}
+
+
+void changeFov(double fov) {
+    state.fov = fov;
+    state.plaW = tan(state.fov / 2) * state.plaDist * 2;
+}
+
+void setPos(double x, double y) {
+    player.x = x;
+    player.y = y;
+}
+
+void setRot(double rot) {
+    player.rot = rot;
+
+    if (player.rot > (M_PI * 2)) {
+        player.rot = 0;
+    }
+    else if (player.rot < 0) {
+        player.rot = (M_PI * 2);
+    }
+
+    player.pSin = sin(player.rot);
+    player.pCos = cos(player.rot);
+    double norm = fabs(player.pSin) + fabs(player.pCos);
+    player.nSin = player.pSin / norm;
+    player.nCos = player.pCos / norm;
+
+}
+
+void playerInit(double x, double y, double rot) {
+    setPos(x, y);
+    player.xVelo = 0;
+    player.yVelo = 0;    
+
+    setRot(rot);
+
+    player.noclip = false;
+}
+
+void playerStats() {
+    player.ncSpeed = 3;
+    player.rSpeed = 3;
+
+    player.accel = 0.4;
+    player.friction = 0.2;
+    player.maxVelo = 0.1;
+}
+
+void stateInit() {
+    state.fpsCap = (CLOCKS_PER_SEC / 60); //1000000
+    state.plaDist = 1; //can be practically anything and curent renderer will still work
+    state.time = clock();
+    changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
 }
 
 
@@ -336,14 +369,6 @@ void drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
 
     col &= bright;
     int wallStart = (SCREEN_HEIGHT - wallHeight) / 2;
-    //wallStart -= (int)(sin((player.xVelo + player.yVelo) * 10) * 100);
-    //if (wallStart < 0) {
-    //    wallHeight += wallStart;
-    //    wallStart = 0;
-    //}
-    //if (wallStart + wallHeight >= SCREEN_HEIGHT) {
-    //    wallHeight = SCREEN_HEIGHT - wallStart;
-    //}
     drawVertLine(x, 0, wallStart, skyColor);
     drawVertLine(x, wallStart, (wallStart + wallHeight), col);
     drawVertLine(x, (wallStart + wallHeight), SCREEN_HEIGHT, floorColor);
@@ -412,14 +437,14 @@ void castRayDDA(double rayAng, double startX, double startY, double* posX, doubl
 }
 
 void castRayDDADraw(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
-    double pSin = sin(rayAng);
-    double pCos = cos(rayAng);
+    double rSin = sin(rayAng);
+    double rCos = cos(rayAng);
 
-    double pTan = pSin / pCos;
-    double pCot = pCos / pSin;
+    double rTan = rSin / rCos;
+    double rCot = rCos / rSin;
 
-    double xStep = sqrtf(1 + pTan * pTan);
-    double yStep = sqrtf(1 + pCot * pCot);
+    double xStep = sqrtf(1 + rTan * rTan);
+    double yStep = sqrtf(1 + rCot * rCot);
     int mapX = startX;
     int mapY = startY;
 
@@ -428,7 +453,7 @@ void castRayDDADraw(double rayAng, double startX, double startY, double* posX, d
     int xDir;   //direction ray is going
     int yDir;
 
-    if (pCos < 0) {
+    if (rCos < 0) {
         xDir = -1;
         rayX = (startX - (int)startX) * xStep;
     }
@@ -436,7 +461,7 @@ void castRayDDADraw(double rayAng, double startX, double startY, double* posX, d
         xDir = 1;
         rayX = (1 + (int)startX - startX) * xStep;
     }
-    if (pSin < 0) {
+    if (rSin < 0) {
         yDir = -1;
         rayY = (startY - (int)startY) * yStep;
     }
@@ -615,28 +640,11 @@ int main(int argc, char const *argv[]) {
     if(!texture) {
         fprintf(stderr, "failed to create SDL texture: %s\n", SDL_GetError());
     }
-
-
-    player.x = 4;
-    player.y = 9;
-    player.speed = 3;
-
-    player.xVelo = 0;
-    player.yVelo = 0;
-    player.accel = 0.4; //0.4;
-    player.friction = 0.2;
-    player.maxVelo = 0.1;
-
-    player.rot = 0;
-    player.rSpeed = 3;
-
-    player.noclip = false;
-
-    state.fpsCap = (1000000 / 60);
-    state.rayStepSize = 0.01;
-    state.plaDist = 1;
-    state.time = clock();
-    changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
+    
+    
+    playerInit(4, 9, 0);
+    playerStats();
+    stateInit();
 
     bool showMap = false;
     bool fishEye = false;
@@ -647,7 +655,7 @@ int main(int argc, char const *argv[]) {
         
         while (clock() - state.time < state.fpsCap) {}
         //printf("%ld\n", clock() - state.time);
-        state.delta = (double)(clock() - state.time) / CLOCKS_PER_SEC; //1000000    
+        state.delta = (double)(clock() - state.time) / CLOCKS_PER_SEC; //1000000
         state.time = clock();
         
         printf("%f\n", 1/state.delta);
