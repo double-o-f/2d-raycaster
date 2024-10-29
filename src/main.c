@@ -214,8 +214,27 @@ void playerRight(double accel) {
 }
 
 void playerMove() {
-    player.x += player.xVelo;
-    player.y += player.yVelo;
+    bool cX =  collisionCheck(player.x + player.xVelo, player.y);
+    bool cY =  collisionCheck(player.x               , player.y + player.yVelo);
+    bool cXY = collisionCheck(player.x + player.xVelo, player.y + player.yVelo);
+
+    if (!cX && !cY && !cXY) {
+        player.x += player.xVelo;
+        player.y += player.yVelo;
+    }
+    else if (!cX) {
+        player.x += player.xVelo;
+        if (player.y + player.yVelo < player.y) {player.y = (int)player.y;}
+        else {player.y = ((int)player.y) + 0.99;}
+        player.yVelo = 0;
+    }
+    else if (!cY) {
+        player.y += player.yVelo;
+        if (player.x + player.xVelo < player.x) {player.x = (int)player.x;}
+        else {player.x = ((int)player.x) + 0.99;}
+        player.xVelo = 0;
+    }
+
 }
 
 void playerFriction(double friction) {
