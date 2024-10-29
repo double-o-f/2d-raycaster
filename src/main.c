@@ -234,6 +234,15 @@ void playerMove() {
         else {player.x = ((int)player.x) + 0.999;}
         player.xVelo = 0;
     }
+    else {
+        if (player.y + player.yVelo < player.y) {player.y = (int)player.y;}
+        else {player.y = ((int)player.y) + 0.999;}
+        player.yVelo = 0;
+        
+        if (player.x + player.xVelo < player.x) {player.x = (int)player.x;}
+        else {player.x = ((int)player.x) + 0.999;}
+        player.xVelo = 0;
+    }
 
 }
 
