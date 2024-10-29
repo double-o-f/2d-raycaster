@@ -225,13 +225,13 @@ void playerMove() {
     else if (!cX) {
         player.x += player.xVelo;
         if (player.y + player.yVelo < player.y) {player.y = (int)player.y;}
-        else {player.y = ((int)player.y) + 0.99;}
+        else {player.y = ((int)player.y) + 0.999;}
         player.yVelo = 0;
     }
     else if (!cY) {
         player.y += player.yVelo;
         if (player.x + player.xVelo < player.x) {player.x = (int)player.x;}
-        else {player.x = ((int)player.x) + 0.99;}
+        else {player.x = ((int)player.x) + 0.999;}
         player.xVelo = 0;
     }
 
@@ -299,6 +299,10 @@ void stateInit() {
     changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
 }
 
+
+void drawCrosshair() {
+    pixels[(SCREEN_WIDTH / 2) + (SCREEN_WIDTH * (SCREEN_HEIGHT / 2))] = 0xFFFFFFFF;
+}
 
 void fillScreen(uint32_t col) {
     for (int i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH); i += 1) {
@@ -747,6 +751,8 @@ int main(int argc, char const *argv[]) {
                 drawWolfDDA();
             }
         }
+
+        drawCrosshair();
 
         SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * 4);
         SDL_RenderCopyEx(
