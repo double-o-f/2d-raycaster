@@ -308,6 +308,22 @@ void stateInit() {
     changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
 }
 
+void changeWall() {
+    int x;
+    int y;
+    SDL_GetMouseState(&x, &y);
+
+    int mapX = (x * MAP_SIZE) / WINDOW_WIDTH;
+    int mapY = (y * MAP_SIZE) / WINDOW_HEIGHT;
+
+    if (map[mapX + (mapY * MAP_SIZE)] >= 3) {
+        map[mapX + (mapY * MAP_SIZE)] = 0;
+    }
+    else {
+        map[mapX + (mapY * MAP_SIZE)] += 1;
+    }
+}
+
 
 void drawCrosshair() {
     pixels[(SCREEN_WIDTH / 2) + (SCREEN_WIDTH * (SCREEN_HEIGHT / 2))] = 0xFFFFFFFF;
@@ -682,6 +698,8 @@ int main(int argc, char const *argv[]) {
     bool fishEye = false;
     bool rJP = false;
     bool fJP = false;
+    bool mbJP = false;
+
 
     while (!quit){
         
@@ -697,6 +715,15 @@ int main(int argc, char const *argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 quit = true;
+            }
+            if (showMap && event.type == SDL_MOUSEBUTTONDOWN) {
+                if (!(mbJP)) {
+                    changeWall(); //drunk ass bitch
+                    mbJP = true;
+                }
+            }
+            else {
+                mbJP = false;
             }
         }
 
