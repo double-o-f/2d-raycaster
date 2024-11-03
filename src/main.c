@@ -82,6 +82,8 @@ struct {
 
     bool noclip;
     double ncSpeed;
+
+    double mSpeed;
 } player;
 
 
@@ -124,8 +126,14 @@ bool collisionCheck (double x, double y) {
     return true;
 }
 
-void playerRotate(double rSpeed) {
-    player.rot += rSpeed * state.delta;
+void setPos(double x, double y) {
+    player.x = x;
+    player.y = y;
+}
+
+void setRot(double rot) {
+    player.rot = rot;
+
     if (player.rot > (M_PI * 2)) {
         player.rot = 0;
     }
@@ -138,6 +146,15 @@ void playerRotate(double rSpeed) {
     double norm = fabs(player.pSin) + fabs(player.pCos);
     player.nSin = player.pSin / norm;
     player.nCos = player.pCos / norm;
+
+}
+
+void playerRotate(double rSpeed) {
+    setRot(player.rot += rSpeed * state.delta);
+}
+
+void mPlayerRotate(double mRot) {
+    setRot(player.rot += player.mSpeed * mRot);
 }
 
 void playerNCForward(double speed) {
@@ -259,33 +276,10 @@ void changeFov(double fov) {
     state.plaW = tan(state.fov / 2) * state.plaDist * 2;
 }
 
-void setPos(double x, double y) {
-    player.x = x;
-    player.y = y;
-}
-
-void setRot(double rot) {
-    player.rot = rot;
-
-    if (player.rot > (M_PI * 2)) {
-        player.rot = 0;
-    }
-    else if (player.rot < 0) {
-        player.rot = (M_PI * 2);
-    }
-
-    player.pSin = sin(player.rot);
-    player.pCos = cos(player.rot);
-    double norm = fabs(player.pSin) + fabs(player.pCos);
-    player.nSin = player.pSin / norm;
-    player.nCos = player.pCos / norm;
-
-}
-
 void playerInit(double x, double y, double rot) {
     setPos(x, y);
     player.xVelo = 0;
-    player.yVelo = 0;    
+    player.yVelo = 0;
 
     setRot(rot);
 
@@ -295,6 +289,7 @@ void playerInit(double x, double y, double rot) {
 void playerStats() {
     player.ncSpeed = 3;
     player.rSpeed = 3;
+    player.mSpeed = 0.003;
 
     player.accel = 0.4;
     player.friction = 0.2;
@@ -695,7 +690,9 @@ int main(int argc, char const *argv[]) {
     stateInit();
 
     bool showMap = false;
+    SDL_SetRelativeMouseMode(true);
     bool fishEye = false;
+
     bool rJP = false;
     bool fJP = false;
     bool mbJP = false;
@@ -716,14 +713,19 @@ int main(int argc, char const *argv[]) {
             if (event.type == SDL_QUIT) {
                 quit = true;
             }
-            if (showMap && event.type == SDL_MOUSEBUTTONDOWN) {
+
+            if (event.type == SDL_MOUSEBUTTONDOWN && showMap) {
                 if (!(mbJP)) {
-                    changeWall(); //drunk ass bitch
+                    changeWall();
                     mbJP = true;
                 }
             }
             else {
                 mbJP = false;
+            }
+
+            if (event.type == SDL_MOUSEMOTION && !showMap) {
+                mPlayerRotate(event.motion.xrel);
             }
         }
 
@@ -750,8 +752,14 @@ int main(int argc, char const *argv[]) {
 
         if (keystate[SDL_SCANCODE_R]) {
             if (!(rJP)) {
-                if (showMap) {showMap = false;}
-                else {showMap = true;}
+                if (showMap) {
+                    showMap = false;
+                    SDL_SetRelativeMouseMode(true);
+                    }
+                else {
+                    showMap = true;
+                    SDL_SetRelativeMouseMode(false);
+                    }
                 rJP = true;
             }
         }
@@ -785,10 +793,9 @@ int main(int argc, char const *argv[]) {
             }
             else {
                 drawWolfDDA();
+                drawCrosshair();
             }
         }
-
-        drawCrosshair();
 
         SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * 4);
         SDL_RenderCopyEx(
