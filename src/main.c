@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 
 #ifdef __WIN64
 #define SDL_MAIN_HANDLED
@@ -25,9 +26,9 @@ uint32_t color2 = 0x004499FF;
 uint32_t color3 = 0x994400FF;
 
 
-#define MAP_WIDTH 16
-#define MAP_HEIGHT 16
-//int map[MAP_WIDTH * MAP_HEIGHT] = {
+//#define mapWidth 16
+//#define mapHeight 16
+//int map[mapWidth * mapHeight] = {
 //            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 //            1, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
@@ -35,24 +36,30 @@ uint32_t color3 = 0x994400FF;
 //            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 //            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
 //            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
-int map[MAP_WIDTH * MAP_HEIGHT] = {
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
-            1, 0, 2, 0, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
-            1, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
+//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+//map = {
+//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
+//            1, 0, 2, 0, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
+//            1, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+
+int mapWidth = 16;
+int mapHeight = 16;
+int* map;
 
 uint32_t pixels[SCREEN_WIDTH * SCREEN_WIDTH];
 
@@ -132,7 +139,8 @@ void zeroOut(double* pVal, double step) {
 
 
 bool collisionCheck (double x, double y) {
-    if (map[(int)x + ((int)y * MAP_WIDTH)] == 0) {return false;}
+    return false; //delete
+    if (map[(int)x + ((int)y * mapWidth)] == 0) {return false;}
     return true;
 }
 
@@ -313,22 +321,6 @@ void stateInit() {
     changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
 }
 
-void changeWall() {
-    int x;
-    int y;
-    SDL_GetMouseState(&x, &y);
-
-    int mapX = (x * MAP_WIDTH) / WINDOW_WIDTH;
-    int mapY = (y * MAP_HEIGHT) / WINDOW_HEIGHT;
-
-    if (map[mapX + (mapY * MAP_WIDTH)] >= 3) {
-        map[mapX + (mapY * MAP_WIDTH)] = 0;
-    }
-    else {
-        map[mapX + (mapY * MAP_WIDTH)] += 1;
-    }
-}
-
 
 void drawCrosshair() {
     pixels[(SCREEN_WIDTH / 2) + (SCREEN_WIDTH * (SCREEN_HEIGHT / 2))] = 0xFFFFFFFF;
@@ -347,19 +339,19 @@ void drawVertLine(int x, int startY, int endY, uint32_t col) {
 }
 
 void drawPoint(double x, double y, uint32_t col) {
-    double screenX = (x * SCREEN_WIDTH) / MAP_WIDTH;
-    double screenY = (y * SCREEN_HEIGHT) / MAP_HEIGHT;
+    double screenX = (x * SCREEN_WIDTH) / mapWidth;
+    double screenY = (y * SCREEN_HEIGHT) / mapHeight;
 
     pixels[(int)screenX + ((int)screenY * SCREEN_WIDTH)] = col;
 }
 
 void drawMap() {
     int nextScreenY = 0;
-    for (int y = 0; y < MAP_HEIGHT; y += 1) {
+    for (int y = 0; y < mapHeight; y += 1) {
 
         int screenY = nextScreenY;
-        if (y + 1 < MAP_HEIGHT) {
-            nextScreenY = ((y + 1) * SCREEN_HEIGHT) / MAP_HEIGHT;     //used on next iteration to set current screenY
+        if (y + 1 < mapHeight) {
+            nextScreenY = ((y + 1) * SCREEN_HEIGHT) / mapHeight;     //used on next iteration to set current screenY
         }
         else {
             nextScreenY = SCREEN_HEIGHT;
@@ -367,18 +359,18 @@ void drawMap() {
         int gapSizeY = nextScreenY - screenY;
 
         int nextScreenX = 0;
-        for (int x = 0; x < MAP_WIDTH; x += 1) {
+        for (int x = 0; x < mapWidth; x += 1) {
 
             int screenX = nextScreenX;
-            if (x + 1 < MAP_WIDTH) {
-                nextScreenX = ((x + 1) * SCREEN_WIDTH) / MAP_WIDTH;  //used on next iteration to set current screenX
+            if (x + 1 < mapWidth) {
+                nextScreenX = ((x + 1) * SCREEN_WIDTH) / mapWidth;  //used on next iteration to set current screenX
             }
             else {
                 nextScreenX = SCREEN_WIDTH;
             }
             int gapSizeX = nextScreenX - screenX;
 
-            int wallType = map[x + (y * MAP_WIDTH)];
+            int wallType = map[x + (y * mapWidth)];
             uint32_t screenCol;
             if (wallType == 1) {
                 screenCol = color1;
@@ -464,7 +456,7 @@ void castRayDDA(double rayAng, double startX, double startY, double* posX, doubl
     double curDist = 0;
     bool last = 0;
     while (true) {
-        int wall = map[mapX + (mapY * MAP_WIDTH)];
+        int wall = map[mapX + (mapY * mapWidth)];
         if (wall != 0) {
             *posX = startX + (curDist / xStep) * xDir;
             *posY = startY + (curDist / yStep) * yDir;
@@ -530,7 +522,7 @@ void castRayDDADraw(double rayAng, double startX, double startY, double* posX, d
         double y = startY + (curDist / yStep) * yDir;
 
         drawPoint(x, y, 0xFFFFFFFF);
-        int wall = map[mapX + (mapY * MAP_WIDTH)];
+        int wall = map[mapX + (mapY * mapWidth)];
         if (wall != 0) {
             *posX = x;
             *posY = y;
@@ -660,9 +652,60 @@ void drawWolfDDA() {
     }
 }
 
+void changeWall() {
+    int x;
+    int y;
+    SDL_GetMouseState(&x, &y);
+
+    int mapX = (x * mapWidth) / WINDOW_WIDTH;
+    int mapY = (y * mapHeight) / WINDOW_HEIGHT;
+
+    if (map[mapX + (mapY * mapWidth)] >= 3) {
+        map[mapX + (mapY * mapWidth)] = 0;
+    }
+    else {
+        map[mapX + (mapY * mapWidth)] += 1;
+    }
+}
+
+void saveMap() {
+    FILE *filePtr;
+    filePtr = fopen("test.bin","wb");
+    
+    //int dim[2] = {mapWidth, mapHeight};
+    //fwrite(dim, sizeof(dim), 1, filePtr);
+
+    //filePtr = fopen("test.bin","ab");
+    fwrite(map, mapWidth * mapHeight * sizeof(int), 1, filePtr);
+    fflush(filePtr);
+}
+
+int loadMap() {
+
+}
 
 int main(int argc, char const *argv[]) {
     printf("%s\n", ":)");
+
+    FILE* fptr;
+    fptr = fopen("test.bin", "rb");
+    //fread(&mapHeight, sizeof(int), 1, fptr);
+
+    //fseek(fptr, sizeof(int), SEEK_SET);
+    //fread(&mapWidth, sizeof(int), 1, fptr);
+    
+    //printf("%i\n", mapHeight);
+    //printf("%i\n", mapWidth);
+
+    map = (int*)malloc(mapWidth * mapHeight * sizeof(int));
+
+    //fseek(fptr, sizeof(int), SEEK_CUR);
+    fread(map, mapWidth * mapHeight * sizeof(int), 1, fptr);
+    printf("%i\n", map[0]);
+    printf("%i\n", map[1]);
+    printf("%i\n", map[19]);
+    printf("%i\n", mapWidth * mapHeight * sizeof(int));
+    
 
     if(SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "SDL failed to initialize: %s\n", SDL_GetError());
@@ -715,7 +758,7 @@ int main(int argc, char const *argv[]) {
         state.delta = (double)(clock() - state.time) / CLOCKS_PER_SEC; //1000000
         state.time = clock();
         
-        printf("%f\n", 1/state.delta);
+        //printf("%f\n", 1/state.delta);
         //printf("%ld\n", state.time - state.oldTime);
 
         SDL_Event event;
@@ -763,6 +806,7 @@ int main(int argc, char const *argv[]) {
         if (keystate[SDL_SCANCODE_R]) {
             if (!(rJP)) {
                 if (showMap) {
+                    saveMap();
                     showMap = false;
                     SDL_SetRelativeMouseMode(true);
                     }
