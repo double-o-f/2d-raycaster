@@ -25,8 +25,18 @@ uint32_t color2 = 0x004499FF;
 uint32_t color3 = 0x994400FF;
 
 
-#define MAP_SIZE 16
-int map[MAP_SIZE * MAP_SIZE] = {
+#define MAP_WIDTH 16
+#define MAP_HEIGHT 16
+//int map[MAP_WIDTH * MAP_HEIGHT] = {
+//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
+//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
+int map[MAP_WIDTH * MAP_HEIGHT] = {
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             1, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -122,7 +132,7 @@ void zeroOut(double* pVal, double step) {
 
 
 bool collisionCheck (double x, double y) {
-    if (map[(int)x + ((int)y * MAP_SIZE)] == 0) {return false;}
+    if (map[(int)x + ((int)y * MAP_WIDTH)] == 0) {return false;}
     return true;
 }
 
@@ -308,14 +318,14 @@ void changeWall() {
     int y;
     SDL_GetMouseState(&x, &y);
 
-    int mapX = (x * MAP_SIZE) / WINDOW_WIDTH;
-    int mapY = (y * MAP_SIZE) / WINDOW_HEIGHT;
+    int mapX = (x * MAP_WIDTH) / WINDOW_WIDTH;
+    int mapY = (y * MAP_HEIGHT) / WINDOW_HEIGHT;
 
-    if (map[mapX + (mapY * MAP_SIZE)] >= 3) {
-        map[mapX + (mapY * MAP_SIZE)] = 0;
+    if (map[mapX + (mapY * MAP_WIDTH)] >= 3) {
+        map[mapX + (mapY * MAP_WIDTH)] = 0;
     }
     else {
-        map[mapX + (mapY * MAP_SIZE)] += 1;
+        map[mapX + (mapY * MAP_WIDTH)] += 1;
     }
 }
 
@@ -337,19 +347,19 @@ void drawVertLine(int x, int startY, int endY, uint32_t col) {
 }
 
 void drawPoint(double x, double y, uint32_t col) {
-    double screenX = (x * SCREEN_WIDTH) / MAP_SIZE;
-    double screenY = (y * SCREEN_HEIGHT) / MAP_SIZE;
+    double screenX = (x * SCREEN_WIDTH) / MAP_WIDTH;
+    double screenY = (y * SCREEN_HEIGHT) / MAP_HEIGHT;
 
     pixels[(int)screenX + ((int)screenY * SCREEN_WIDTH)] = col;
 }
 
 void drawMap() {
     int nextScreenY = 0;
-    for (int y = 0; y < MAP_SIZE; y += 1) {
+    for (int y = 0; y < MAP_HEIGHT; y += 1) {
 
         int screenY = nextScreenY;
-        if (y + 1 < MAP_SIZE) {
-            nextScreenY = ((y + 1) * SCREEN_HEIGHT) / MAP_SIZE;     //used on next iteration to set current screenY
+        if (y + 1 < MAP_HEIGHT) {
+            nextScreenY = ((y + 1) * SCREEN_HEIGHT) / MAP_HEIGHT;     //used on next iteration to set current screenY
         }
         else {
             nextScreenY = SCREEN_HEIGHT;
@@ -357,18 +367,18 @@ void drawMap() {
         int gapSizeY = nextScreenY - screenY;
 
         int nextScreenX = 0;
-        for (int x = 0; x < MAP_SIZE; x += 1) {
+        for (int x = 0; x < MAP_WIDTH; x += 1) {
 
             int screenX = nextScreenX;
-            if (x + 1 < MAP_SIZE) {
-                nextScreenX = ((x + 1) * SCREEN_WIDTH) / MAP_SIZE;  //used on next iteration to set current screenX
+            if (x + 1 < MAP_WIDTH) {
+                nextScreenX = ((x + 1) * SCREEN_WIDTH) / MAP_WIDTH;  //used on next iteration to set current screenX
             }
             else {
                 nextScreenX = SCREEN_WIDTH;
             }
             int gapSizeX = nextScreenX - screenX;
 
-            int wallType = map[x + (y * MAP_SIZE)];
+            int wallType = map[x + (y * MAP_WIDTH)];
             uint32_t screenCol;
             if (wallType == 1) {
                 screenCol = color1;
@@ -454,7 +464,7 @@ void castRayDDA(double rayAng, double startX, double startY, double* posX, doubl
     double curDist = 0;
     bool last = 0;
     while (true) {
-        int wall = map[mapX + (mapY * MAP_SIZE)];
+        int wall = map[mapX + (mapY * MAP_WIDTH)];
         if (wall != 0) {
             *posX = startX + (curDist / xStep) * xDir;
             *posY = startY + (curDist / yStep) * yDir;
@@ -520,7 +530,7 @@ void castRayDDADraw(double rayAng, double startX, double startY, double* posX, d
         double y = startY + (curDist / yStep) * yDir;
 
         drawPoint(x, y, 0xFFFFFFFF);
-        int wall = map[mapX + (mapY * MAP_SIZE)];
+        int wall = map[mapX + (mapY * MAP_WIDTH)];
         if (wall != 0) {
             *posX = x;
             *posY = y;
@@ -685,7 +695,7 @@ int main(int argc, char const *argv[]) {
     }
     
     
-    playerInit(4, 9, 0);
+    playerInit(4, 3, 0);
     playerStats();
     stateInit();
 
