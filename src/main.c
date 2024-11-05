@@ -25,38 +25,6 @@ uint32_t color1 = 0x990044FF;
 uint32_t color2 = 0x004499FF;
 uint32_t color3 = 0x994400FF;
 
-
-//#define mapWidth 16
-//#define mapHeight 16
-//int map[mapWidth * mapHeight] = {
-//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-//map = {
-//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
-//            1, 0, 2, 0, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 1,
-//            1, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 1,
-//            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-//            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-
 int mapWidth = 16;
 int mapHeight = 16;
 int* map;
@@ -139,7 +107,6 @@ void zeroOut(double* pVal, double step) {
 
 
 bool collisionCheck (double x, double y) {
-    return false; //delete
     if (map[(int)x + ((int)y * mapWidth)] == 0) {return false;}
     return true;
 }
@@ -670,43 +637,39 @@ void changeWall() {
 
 void saveMap() {
     FILE *filePtr;
-    filePtr = fopen("test.bin","wb");
+    filePtr = fopen("map.map","wb");
     
-    //int dim[2] = {mapWidth, mapHeight};
-    //fwrite(dim, sizeof(dim), 1, filePtr);
+    int dim[2] = {mapWidth, mapHeight};
+    fwrite(dim, sizeof(dim), 1, filePtr);
 
-    //filePtr = fopen("test.bin","ab");
+    fseek(filePtr, sizeof(dim), SEEK_SET);
     fwrite(map, mapWidth * mapHeight * sizeof(int), 1, filePtr);
     fflush(filePtr);
 }
 
-int loadMap() {
+void loadMap() {
 
 }
+
+void initLoadMap () {
+    FILE* filePtr;
+    filePtr = fopen("map.map", "rb");
+    
+    fread(&mapHeight, sizeof(int), 1, filePtr);
+    fseek(filePtr, sizeof(int), SEEK_SET);
+    fread(&mapWidth, sizeof(int), 1, filePtr);
+
+    map = (int*)malloc(mapWidth * mapHeight * sizeof(int));
+    fseek(filePtr, sizeof(int) * 2, SEEK_SET);    
+    fread(map, mapWidth * mapHeight * sizeof(int), 1, filePtr);
+}
+
 
 int main(int argc, char const *argv[]) {
     printf("%s\n", ":)");
 
-    FILE* fptr;
-    fptr = fopen("test.bin", "rb");
-    //fread(&mapHeight, sizeof(int), 1, fptr);
-
-    //fseek(fptr, sizeof(int), SEEK_SET);
-    //fread(&mapWidth, sizeof(int), 1, fptr);
+    initLoadMap();
     
-    //printf("%i\n", mapHeight);
-    //printf("%i\n", mapWidth);
-
-    map = (int*)malloc(mapWidth * mapHeight * sizeof(int));
-
-    //fseek(fptr, sizeof(int), SEEK_CUR);
-    fread(map, mapWidth * mapHeight * sizeof(int), 1, fptr);
-    printf("%i\n", map[0]);
-    printf("%i\n", map[1]);
-    printf("%i\n", map[19]);
-    printf("%i\n", mapWidth * mapHeight * sizeof(int));
-    
-
     if(SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "SDL failed to initialize: %s\n", SDL_GetError());
     }
