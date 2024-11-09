@@ -82,33 +82,20 @@ double getDist(double x1, double y1, double x2, double y2) {
 }
 
 int getSign(double num) {
-    if (num > 0) {
-        return 1;
-    }
-    else if (num < 0) {
-        return -1;
-    }
-    return 0;
+    return (num > 0 ? 1 : (num < 0 ? -1 : 0));
 }
 
 void zeroOut(double* pVal, double step) {
     if (*pVal == 0) {return;}
-    double val = *pVal;
-    double oldVal = val;
-    step *= getSign(val) * -1;
-    val += step;
-    if (getSign(val) != getSign(oldVal)) {
-        val = 0;
-    }
-
-    *pVal = val;
-
+    double oldVal = *pVal;
+    step *= getSign(*pVal) * -1;
+    *pVal += step;
+    if (getSign(*pVal) != getSign(oldVal)) {*pVal = 0;}
 }
 
 
 bool collisionCheck (double x, double y) {
-    if (map[(int)x + ((int)y * mapWidth)] == 0) {return false;}
-    return true;
+    return (map[(int)x + ((int)y * mapWidth)] == 0 ? false : true);
 }
 
 void setPos(double x, double y) {
@@ -261,12 +248,11 @@ void changeFov(double fov) {
     state.plaW = tan(state.fov / 2) * state.plaDist * 2;
 }
 
-void playerInit(double x, double y, double rot) {
-    setPos(x, y);
+void playerInit() {
     player.xVelo = 0;
     player.yVelo = 0;
 
-    setRot(rot);
+    setRot(player.rot);
 
     player.noclip = false;
 }
@@ -636,39 +622,58 @@ void changeWall() {
 }
 
 void saveMap() {
-    FILE *filePtr;
-    filePtr = fopen("map.map","wb");
+    FILE* filePtr = fopen("map.map","wb");
+    size_t offset = 0;
     
     int dim[2] = {mapWidth, mapHeight};
     fwrite(dim, sizeof(dim), 1, filePtr);
+    offset += sizeof(dim);
+    fseek(filePtr, offset, SEEK_SET);
 
-    fseek(filePtr, sizeof(dim), SEEK_SET);
+    double pos[3] = {player.x, player.y, player.rot};
+    fwrite(pos, sizeof(pos), 1, filePtr);
+    offset += sizeof(pos);
+    fseek(filePtr, offset, SEEK_SET);
+
     fwrite(map, mapWidth * mapHeight * sizeof(int), 1, filePtr);
     fflush(filePtr);
 }
 
-void loadMap() {
+void loadMap(char* fileName) {
+    FILE* filePtr = fopen(fileName, "rb");
+    size_t offset = 0;
 
-}
-
-void initLoadMap () {
-    FILE* filePtr;
-    filePtr = fopen("map.map", "rb");
-    
     fread(&mapHeight, sizeof(int), 1, filePtr);
-    fseek(filePtr, sizeof(int), SEEK_SET);
+    offset += sizeof(int);
+    fseek(filePtr, offset, SEEK_SET);
+
     fread(&mapWidth, sizeof(int), 1, filePtr);
+    offset += sizeof(int);
+    fseek(filePtr, offset, SEEK_SET);
+
+    fread(&player.x, sizeof(double), 1, filePtr);
+    offset += sizeof(double);
+    fseek(filePtr, offset, SEEK_SET);
+
+    fread(&player.y, sizeof(double), 1, filePtr);
+    offset += sizeof(double);
+    fseek(filePtr, offset, SEEK_SET);
+
+    fread(&player.rot, sizeof(double), 1, filePtr);
+    offset += sizeof(double);
+    fseek(filePtr, offset, SEEK_SET);
 
     map = (int*)malloc(mapWidth * mapHeight * sizeof(int));
-    fseek(filePtr, sizeof(int) * 2, SEEK_SET);    
     fread(map, mapWidth * mapHeight * sizeof(int), 1, filePtr);
+}
+
+void initLoadMap() {
+    loadMap("map.map");
 }
 
 
 int main(int argc, char const *argv[]) {
     printf("%s\n", ":)");
-
-    initLoadMap();
     
     if(SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "SDL failed to initialize: %s\n", SDL_GetError());
@@ -700,8 +705,8 @@ int main(int argc, char const *argv[]) {
         fprintf(stderr, "failed to create SDL texture: %s\n", SDL_GetError());
     }
     
-    
-    playerInit(4, 3, 0);
+    initLoadMap();
+    playerInit();
     playerStats();
     stateInit();
 
