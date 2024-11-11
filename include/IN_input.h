@@ -26,7 +26,7 @@ struct IN_input_{
     bool mouseLastST[5];
 
     const uint8_t* KBState;
-    const uint8_t* KBLastState;
+    uint8_t* KBLastState;
     int KBLen;
 };
 extern struct IN_input_ IN_input;

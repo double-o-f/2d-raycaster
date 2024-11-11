@@ -1,6 +1,6 @@
 #include <stdbool.h> //bool
 #include <stdint.h> //uint8_t
-#include <string.h> //memcmp
+#include <string.h> //memcpy
 
 #ifdef __WIN64
 #define SDL_MAIN_HANDLED
@@ -32,26 +32,20 @@ bool IN_MBJustPressed(int mb) {
 }
 
 bool IN_keyJustPressed(int key) {
-    if (IN_input.KBState[key] && !(IN_input.KBLastState[key])) {
-        return true;
+    if (IN_input.KBState[key] == 1) {
+        if (IN_input.KBLastState[key] == 0) {
+            IN_input.KBLastState[key] = 1;
+            return true;
+        }
+    }
+    else {
+        IN_input.KBLastState[key] = 0;
     }
     return false;
 }
 
 
-void IN_mouseUpdate() {
-    SDL_GetMouseState(&IN_input.mouseX, &IN_input.mouseY);
-}
-
-void IN_KBUpdate() {
-    memcmp(IN_input.KBLastState, IN_input.KBState, IN_input.KBLen);
-    IN_input.KBState = SDL_GetKeyboardState(NULL);
-}
-
-
 void IN_allActions() {
-    IN_mouseUpdate();
-
     if (IN_input.event.type == SDL_QUIT) {
         ST_state.quit = true;
     }
@@ -74,6 +68,8 @@ void IN_gameActions() {
     if (IN_input.event.type == SDL_MOUSEMOTION) {
         PL_mouseRotate(IN_input.event.motion.xrel);
     }
+
+
 }
 
 void IN_menuActions() {
@@ -82,9 +78,7 @@ void IN_menuActions() {
 
 
 void IN_allKBActions() {
-    IN_KBUpdate();
-
-    if (IN_keyJustPressed(SDL_SCANCODE_S)) {
+    if (IN_keyJustPressed(SDL_SCANCODE_M)) {
         MP_saveMap();    
     }
 }
@@ -139,8 +133,11 @@ void IN_menuKBActions() {
 
 
 void IN_checkInputs() {
+    
+    SDL_GetMouseState(&IN_input.mouseX, &IN_input.mouseY); //get mouse pos
     while (SDL_PollEvent(&IN_input.event)) {
         IN_allActions();
+
         if (UI_ui.showMenu) {
             IN_menuActions();
         }
@@ -152,6 +149,9 @@ void IN_checkInputs() {
         }
         
     }
+
+
+    IN_input.KBState = SDL_GetKeyboardState(NULL); //get keyboard state
 
     IN_allKBActions();
     if (UI_ui.showMenu) {
@@ -173,5 +173,5 @@ void IN_init() {
     IN_input.KBState = SDL_GetKeyboardState(&IN_input.KBLen);
     IN_input.KBLen *= sizeof(uint8_t);
     IN_input.KBLastState = (uint8_t*)malloc(IN_input.KBLen);
-    memcmp(IN_input.KBLastState, IN_input.KBState, IN_input.KBLen);
+    memcpy(IN_input.KBLastState, IN_input.KBState, IN_input.KBLen);
 }

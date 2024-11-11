@@ -29,7 +29,12 @@ int main(int argc, char const *argv[]) {
     while (!ST_state.quit){
         
         ST_tickFpsCapped(); //if time since last call is < time to stay at frame rate limit wait
+        //ST_tick();
         
+        //if (1 / ST_state.delta < 59) {
+        //    printf("%f\n" , 1 / ST_state.delta);
+        //}
+
         IN_checkInputs(); //check inputs and do some game logic
 
         PL_moveStuff(); //player physics

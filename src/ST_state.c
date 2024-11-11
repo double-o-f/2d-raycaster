@@ -13,6 +13,11 @@ void ST_tickFpsCapped() {
     ST_state.time = clock();
 }
 
+void ST_tick() {
+    ST_state.delta = (double)(clock() - ST_state.time) / CLOCKS_PER_SEC; //1000000
+    ST_state.time = clock();
+}
+
 void ST_init() {
     ST_state.quit = false;
     ST_state.fpsCap = (CLOCKS_PER_SEC / 60); //1000000

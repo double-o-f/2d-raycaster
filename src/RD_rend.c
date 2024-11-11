@@ -371,8 +371,8 @@ void RD_changeFov(double fov) {
 }
 
 void RD_init() {
-    RD_rend.screenWidth = 1600; // 1440// 1600// 800
-    RD_rend.screenHeight = 900; // 1080// 900// 450
+    RD_rend.screenWidth = 800; // 1440// 1600// 800
+    RD_rend.screenHeight = 450; // 1080// 900// 450
 
     RD_rend.pixels = (uint32_t*)malloc(RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
 

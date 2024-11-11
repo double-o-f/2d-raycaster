@@ -17,6 +17,8 @@ extern struct ST_state_ ST_state;
 
 void ST_tickFpsCapped();
 
+void ST_tick();
+
 void ST_init();
 
 #endif
