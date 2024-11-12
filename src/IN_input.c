@@ -1,3 +1,4 @@
+#include <stdlib.h> //malloc
 #include <stdbool.h> //bool
 #include <stdint.h> //uint8_t
 #include <string.h> //memcpy
@@ -45,6 +46,29 @@ bool IN_keyJustPressed(int key) {
 }
 
 
+void IN_checkMovement() {
+    if (IN_input.KBState[SDL_SCANCODE_UP] || IN_input.KBState[SDL_SCANCODE_W]) {
+        PL_forward(PL_player.accel);
+    }
+    if (IN_input.KBState[SDL_SCANCODE_DOWN] || IN_input.KBState[SDL_SCANCODE_S]) {
+        PL_backward(PL_player.accel);
+    }
+    if (IN_input.KBState[SDL_SCANCODE_A]) {
+        PL_left(PL_player.accel);
+    }
+    if (IN_input.KBState[SDL_SCANCODE_D]) {
+        PL_right(PL_player.accel);
+    }
+
+    if (IN_input.KBState[SDL_SCANCODE_LEFT]) {
+        PL_rotate(PL_player.rSpeed * -1);  
+    }
+    if (IN_input.KBState[SDL_SCANCODE_RIGHT]) {
+        PL_rotate(PL_player.rSpeed);  
+    }
+}
+
+
 void IN_allActions() {
     if (IN_input.event.type == SDL_QUIT) {
         ST_state.quit = true;
@@ -84,6 +108,8 @@ void IN_allKBActions() {
 }
 
 void IN_mapKBActions() {
+    IN_checkMovement();
+
     if (IN_keyJustPressed(SDL_SCANCODE_R)) {
         UI_ui.showMap = false;
         SDL_SetRelativeMouseMode(true);
@@ -92,25 +118,7 @@ void IN_mapKBActions() {
 }
 
 void IN_gameKBActions() {
-    if (IN_input.KBState[SDL_SCANCODE_UP] || IN_input.KBState[SDL_SCANCODE_W]) {
-        PL_forward(PL_player.accel);
-    }
-    if (IN_input.KBState[SDL_SCANCODE_DOWN] || IN_input.KBState[SDL_SCANCODE_S]) {
-        PL_backward(PL_player.accel);
-    }
-    if (IN_input.KBState[SDL_SCANCODE_A]) {
-        PL_left(PL_player.accel);
-    }
-    if (IN_input.KBState[SDL_SCANCODE_D]) {
-        PL_right(PL_player.accel);
-    }
-
-    if (IN_input.KBState[SDL_SCANCODE_LEFT]) {
-        PL_rotate(PL_player.rSpeed * -1);  
-    }
-    if (IN_input.KBState[SDL_SCANCODE_RIGHT]) {
-        PL_rotate(PL_player.rSpeed);  
-    }
+    IN_checkMovement();
 
     if (IN_keyJustPressed(SDL_SCANCODE_R)) {
         UI_ui.showMap = true;
@@ -174,4 +182,8 @@ void IN_init() {
     IN_input.KBLen *= sizeof(uint8_t);
     IN_input.KBLastState = (uint8_t*)malloc(IN_input.KBLen);
     memcpy(IN_input.KBLastState, IN_input.KBState, IN_input.KBLen);
+}
+
+void IN_destroy() {
+    free(IN_input.KBLastState);
 }

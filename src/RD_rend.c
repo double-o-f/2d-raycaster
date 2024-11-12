@@ -34,7 +34,11 @@ void RD_drawVertLine(int x, int startY, int endY, uint32_t col) {
 }
 
 void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
-    uint32_t col;
+
+    int wallStart = (RD_rend.screenHeight - wallHeight) / 2;
+    int floorStart = wallStart + wallHeight;
+
+    uint32_t col = RD_rend.voidColor;
     if (wallType == 1)
     {
         col = RD_rend.color1;
@@ -46,82 +50,24 @@ void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
     else if (wallType == 3)
     {
         col = RD_rend.color3;
+        wallStart -= wallHeight;
+        if (wallStart < 0) {wallStart = 0;}
+    }
+    else if (wallType == -1) {
+        wallStart = RD_rend.screenHeight / 2;
+        floorStart = wallStart;
     }
     else {
         col = (uint32_t)wallType;   //this is bad but it looks cool
     }
-
     col &= bright;
-    int wallStart = (RD_rend.screenHeight - wallHeight) / 2;
+    
     RD_drawVertLine(x, 0, wallStart, RD_rend.skyColor);
-    RD_drawVertLine(x, wallStart, (wallStart + wallHeight), col);
-    RD_drawVertLine(x, (wallStart + wallHeight), RD_rend.screenHeight, RD_rend.floorColor);
+    RD_drawVertLine(x, wallStart, floorStart, col);
+    RD_drawVertLine(x, floorStart, RD_rend.screenHeight, RD_rend.floorColor);
 }
 
-
-void RD_castRay(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
-    double pSin = sin(rayAng);
-    double pCos = cos(rayAng);
-
-    double pTan = pSin / pCos;
-    double pCot = pCos / pSin;
-
-    double xStep = sqrtf(1 + pTan * pTan);
-    double yStep = sqrtf(1 + pCot * pCot);
-    int mapX = startX;
-    int mapY = startY;
-
-    double rayX;
-    double rayY;
-    int xDir;   //direction ray is going
-    int yDir;
-
-    if (pCos < 0) {
-        xDir = -1;
-        rayX = (startX - (int)startX) * xStep;
-    }
-    else {
-        xDir = 1;
-        rayX = (1 + (int)startX - startX) * xStep;
-    }
-    if (pSin < 0) {
-        yDir = -1;
-        rayY = (startY - (int)startY) * yStep;
-    }
-    else {
-        yDir = 1;
-        rayY = (1 + (int)startY - startY) * yStep;
-    }
-
-    double curDist = 0;
-    bool last = 0;
-    while (true) {
-        int wall = MP_map.map[mapX + (mapY * MP_map.width)];
-        if (wall != 0) {
-            *posX = startX + (curDist / xStep) * xDir;
-            *posY = startY + (curDist / yStep) * yDir;
-            *dist = curDist;
-            *wallType = wall;
-            *lastWasX = last;
-            return;
-        }
-
-        if (rayX < rayY) {
-            curDist = rayX;
-            rayX += xStep;
-            mapX += xDir;
-            last = 1;
-        }
-        else {
-            curDist = rayY;
-            rayY += yStep;
-            mapY += yDir;
-            last = 0;
-        }
-    }
-}
-
-void RD_castRayDraw(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
+void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
     double rSin = sin(rayAng);
     double rCos = cos(rayAng);
 
@@ -158,14 +104,26 @@ void RD_castRayDraw(double rayAng, double startX, double startY, double* posX, d
     double curDist = 0;
     bool last = 0;
     while (true) {
-        double x = startX + (curDist / xStep) * xDir;
-        double y = startY + (curDist / yStep) * yDir;
+        if (mapX < 0 || mapX > MP_map.width - 1 || mapY < 0 || mapY > MP_map.height - 1) {
+            *dist = curDist;
+            *wallType = -1;
+            *lastWasX = last;
+            *posX = startX + (curDist / xStep) * xDir;
+            *posY = startY + (curDist / yStep) * yDir;
+            return;
+        }
 
-        RD_drawPoint(x, y, 0xFFFFFFFF);
+        if (doDraw)
+        {
+            double x = startX + (curDist / xStep) * xDir;
+            double y = startY + (curDist / yStep) * yDir;
+            RD_drawPoint(x, y, 0xFFFFFFFF);
+        }
+        
         int wall = MP_map.map[mapX + (mapY * MP_map.width)];
         if (wall != 0) {
-            *posX = x;
-            *posY = y;
+            *posX = startX + (curDist / xStep) * xDir;
+            *posY = startY + (curDist / yStep) * yDir;
             *dist = curDist;
             *wallType = wall;
             *lastWasX = last;
@@ -195,7 +153,7 @@ void RD_drawRay() {
     int wallType;
     bool lastWasX;
 
-    RD_castRayDraw(PL_player.rot, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
+    RD_castRay(PL_player.rot, PL_player.x, PL_player.y, true, &posX, &posY, &dist, &wallType, &lastWasX);
 }
 
 void RD_drawRays() {
@@ -211,14 +169,8 @@ void RD_drawRays() {
         int wallType;
         bool lastWasX;
 
-        RD_castRayDraw(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
+        RD_castRay(plaAng, PL_player.x, PL_player.y, true, &posX, &posY, &dist, &wallType, &lastWasX);
 
-        if (x == 0 || x == RD_rend.screenWidth - 1) {
-            RD_castRayDraw(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
-        }
-        else {
-            RD_castRay(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
-        }
         RD_drawPoint(posX, posY, 0xFFFFFFFF);
 
         fovOffset += fovStep;
@@ -288,7 +240,7 @@ void RD_drawFish() {
         int wallType;
         bool lastWasX;
 
-        RD_castRay(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
+        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
 
         int wallHeight;
         if (dist < 1) {
@@ -322,7 +274,7 @@ void RD_drawWolf() {
         int wallType;
         bool lastWasX;
 
-        RD_castRay(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
+        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
 
         int wallHeight;
         double pDist = dist * cos(plaAng - PL_player.rot);
@@ -371,8 +323,8 @@ void RD_changeFov(double fov) {
 }
 
 void RD_init() {
-    RD_rend.screenWidth = 800; // 1440// 1600// 800
-    RD_rend.screenHeight = 450; // 1080// 900// 450
+    RD_rend.screenWidth = 1280; // 1440// 1600// 800 //1280
+    RD_rend.screenHeight = 720; // 1080// 900// 450 //720
 
     RD_rend.pixels = (uint32_t*)malloc(RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
 
@@ -388,4 +340,8 @@ void RD_init() {
     RD_rend.color1 = 0x990044FF;
     RD_rend.color2 = 0x004499FF;
     RD_rend.color3 = 0x994400FF;
+}
+
+void RD_destroy() {
+    free(RD_rend.pixels);
 }

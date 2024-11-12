@@ -1,5 +1,8 @@
-game: out/ src/main.c MT_math.o PL_player.o MP_map.o RD_rend.o WI_window.o IN_input.o ST_state.o UI_ui.o
-	gcc src/main.c -o game -Iinclude/ out/MT_math.o out/PL_player.o out/MP_map.o out/RD_rend.o out/WI_window.o out/IN_input.o out/ST_state.o out/UI_ui.o -lm -lSDL2 -g
+game: out/ src/game_main.c MT_math.o PL_player.o MP_map.o RD_rend.o WI_window.o IN_input.o ST_state.o UI_ui.o
+	gcc src/game_main.c -o game -Iinclude/ out/MT_math.o out/PL_player.o out/MP_map.o out/RD_rend.o out/WI_window.o out/IN_input.o out/ST_state.o out/UI_ui.o -lm -lSDL2 -g
+
+mapgen: out/ src/mapgen_main.c MT_math.o PL_player.o MP_map.o ST_state.o
+	gcc src/mapgen_main.c -o mapgen -Iinclude/ out/MT_math.o out/PL_player.o out/MP_map.o out/ST_state.o -lm -g
 
 out/:
 	mkdir out

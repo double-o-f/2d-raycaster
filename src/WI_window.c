@@ -11,7 +11,7 @@
 struct WI_window_ WI_window;
 
 
-void WI_Draw() {
+void WI_draw() {
     SDL_UpdateTexture(WI_window.texture, NULL, RD_rend.pixels, RD_rend.screenWidth * 4);
     SDL_RenderCopyEx(
         WI_window.renderer,
@@ -24,7 +24,7 @@ void WI_Draw() {
     SDL_RenderPresent(WI_window.renderer);
 }
 
-void WI_Destroy() {
+void WI_destroy() {
     SDL_DestroyTexture(WI_window.texture);
     SDL_DestroyRenderer(WI_window.renderer);
     SDL_DestroyWindow(WI_window.window);

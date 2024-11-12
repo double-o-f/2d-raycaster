@@ -64,4 +64,6 @@ void IN_checkInputs();
 
 void IN_init();
 
+void IN_destroy();
+
 #endif

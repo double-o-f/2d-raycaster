@@ -11,16 +11,21 @@ struct MP_map_ {
     int width;
     int height;
     int* map;
+    const char* name;
 };
 extern struct MP_map_ MP_map;
 
 
 void MP_saveMap();
 
-void MP_loadMap(char* fileName);
+void MP_createMap(int width, int height, const char* name);
+
+void MP_loadMap(const char* fileName);
 
 void MP_changeWall(int x, int y);
 
 void MP_initLoadMap();
+
+void MP_destroy();
 
 #endif

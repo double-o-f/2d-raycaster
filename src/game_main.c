@@ -31,9 +31,9 @@ int main(int argc, char const *argv[]) {
         ST_tickFpsCapped(); //if time since last call is < time to stay at frame rate limit wait
         //ST_tick();
         
-        //if (1 / ST_state.delta < 59) {
-        //    printf("%f\n" , 1 / ST_state.delta);
-        //}
+        if (1 / ST_state.delta < 59) {
+            printf("%f\n" , 1 / ST_state.delta);
+        }
 
         IN_checkInputs(); //check inputs and do some game logic
 
@@ -41,10 +41,13 @@ int main(int argc, char const *argv[]) {
 
         RD_drawStuff(); //render to pixel buffer
 
-        WI_Draw(); //draw pixel buffer to window
+        WI_draw(); //draw pixel buffer to window
     }
 
-    WI_Destroy();
+    IN_destroy();
+    WI_destroy();
+    RD_destroy();
+    MP_destroy();
 
     exit(EXIT_SUCCESS);
 }

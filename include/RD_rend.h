@@ -43,9 +43,7 @@ void RD_drawVertLine(int x, int startY, int endY, uint32_t col);
 void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright);
 
 
-void RD_castRay(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
-
-void RD_castRayDraw(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
+void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
 
 
 void RD_drawRay();
@@ -66,5 +64,7 @@ void RD_drawStuff();
 void RD_changeFov(double fov);
 
 void RD_init();
+
+void RD_destroy();
 
 #endif

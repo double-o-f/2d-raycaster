@@ -10,6 +10,7 @@ struct PL_player_ PL_player;
 
 
 bool PL_collisionCheck(double x, double y) {
+    if (x < 0 || x > MP_map.width || y < 0 || y > MP_map.height) {return true;}
     return (MP_map.map[(int)x + ((int)y * MP_map.width)] == 0 ? false : true);
 }
 
@@ -184,6 +185,7 @@ void PL_stats() {
 void PL_init() {
     PL_player.x = 0; //set by MP_loadMap()
     PL_player.y = 0; //set by MP_loadMap()
+    PL_player.rot = 0; //set by MP_loadMap()
 
     PL_player.xVelo = 0;
     PL_player.yVelo = 0;

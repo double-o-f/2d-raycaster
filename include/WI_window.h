@@ -22,9 +22,9 @@ struct WI_window_{
 extern struct WI_window_ WI_window;
 
 
-void WI_Draw();
+void WI_draw();
 
-void WI_Destroy();
+void WI_destroy();
 
 
 int WI_init();
