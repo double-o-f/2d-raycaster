@@ -33,7 +33,33 @@ void RD_drawVertLine(int x, int startY, int endY, uint32_t col) {
     }
 }
 
-void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
+void RD_drawWallSliceUpper(int x, int wallHeight, int wallType, uint32_t bright) {
+
+    int wallEnd = (RD_rend.screenHeight - wallHeight) / 2;
+    int wallStart =  wallEnd - wallHeight;
+    if (wallStart < 0) {
+        wallStart = 0;
+    }
+
+    uint32_t col = RD_rend.voidColor;
+    if (wallType == 3)
+    {
+        col = RD_rend.color3;
+    }
+    else if (wallType == -1) {
+        wallStart = RD_rend.screenHeight / 2;
+        wallEnd = wallStart;
+    }
+    else {
+        col = (uint32_t)wallType;   //this is bad but it looks cool
+    }
+    col &= bright;
+    
+    RD_drawVertLine(x, 0, wallStart, RD_rend.skyColor);
+    RD_drawVertLine(x, wallStart, wallEnd, col);
+}
+
+void RD_drawWallSliceLower(int x, int wallHeight, int wallType, uint32_t bright) {
 
     int wallStart = (RD_rend.screenHeight - wallHeight) / 2;
     int floorStart = wallStart + wallHeight;
@@ -50,8 +76,6 @@ void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
     else if (wallType == 3)
     {
         col = RD_rend.color3;
-        wallStart -= wallHeight;
-        if (wallStart < 0) {wallStart = 0;}
     }
     else if (wallType == -1) {
         wallStart = RD_rend.screenHeight / 2;
@@ -62,9 +86,79 @@ void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright) {
     }
     col &= bright;
     
-    RD_drawVertLine(x, 0, wallStart, RD_rend.skyColor);
     RD_drawVertLine(x, wallStart, floorStart, col);
     RD_drawVertLine(x, floorStart, RD_rend.screenHeight, RD_rend.floorColor);
+}
+
+void RD_castRayUpper(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
+    double rSin = sin(rayAng);
+    double rCos = cos(rayAng);
+
+    double rTan = rSin / rCos;
+    double rCot = rCos / rSin;
+
+    double xStep = sqrtf(1 + rTan * rTan);
+    double yStep = sqrtf(1 + rCot * rCot);
+    int mapX = startX;
+    int mapY = startY;
+
+    double rayX;
+    double rayY;
+    int xDir;   //direction ray is going
+    int yDir;
+
+    if (rCos < 0) {
+        xDir = -1;
+        rayX = (startX - (int)startX) * xStep;
+    }
+    else {
+        xDir = 1;
+        rayX = (1 + (int)startX - startX) * xStep;
+    }
+    if (rSin < 0) {
+        yDir = -1;
+        rayY = (startY - (int)startY) * yStep;
+    }
+    else {
+        yDir = 1;
+        rayY = (1 + (int)startY - startY) * yStep;
+    }
+
+    double curDist = 0;
+    bool last = 0;
+    while (true) {
+        if (mapX < 0 || mapX > MP_map.width - 1 || mapY < 0 || mapY > MP_map.height - 1) {
+            *dist = curDist;
+            *wallType = -1;
+            *lastWasX = last;
+            *posX = startX + (curDist / xStep) * xDir;
+            *posY = startY + (curDist / yStep) * yDir;
+            return;
+        }
+
+        int wall = MP_map.map[mapX + (mapY * MP_map.width)];
+        if (wall >= 3) {
+            *posX = startX + (curDist / xStep) * xDir;
+            *posY = startY + (curDist / yStep) * yDir;
+            *dist = curDist;
+            *wallType = wall;
+            *lastWasX = last;
+            return;
+        }
+
+        if (rayX < rayY) {
+            curDist = rayX;
+            rayX += xStep;
+            mapX += xDir;
+            last = 1;
+        }
+        else {
+            curDist = rayY;
+            rayY += yStep;
+            mapY += yDir;
+            last = 0;
+        }
+    }
 }
 
 void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
@@ -240,9 +334,9 @@ void RD_drawFish() {
         int wallType;
         bool lastWasX;
 
-        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
-
         int wallHeight;
+
+        RD_castRayUpper(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
         if (dist < 1) {
             wallHeight = RD_rend.screenHeight;
         }
@@ -251,10 +345,25 @@ void RD_drawFish() {
         }
 
         if (lastWasX) {
-            RD_drawWallSlice(x, wallHeight, wallType, 0xC0C0C0FF);
+            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xC0C0C0FF);
         }
         else {
-            RD_drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
+            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xFFFFFFFF);
+        }
+
+        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
+        if (dist < 1) {
+            wallHeight = RD_rend.screenHeight;
+        }
+        else {
+            wallHeight = RD_rend.screenHeight / dist;
+        }
+
+        if (lastWasX) {
+            RD_drawWallSliceLower(x, wallHeight, wallType, 0xC0C0C0FF);
+        }
+        else {
+            RD_drawWallSliceLower(x, wallHeight, wallType, 0xFFFFFFFF);
         }
 
         fovOffset += fovStep;
@@ -274,10 +383,11 @@ void RD_drawWolf() {
         int wallType;
         bool lastWasX;
 
-        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
-
         int wallHeight;
-        double pDist = dist * cos(plaAng - PL_player.rot);
+        double pDist;
+
+        RD_castRayUpper(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
+        pDist = dist * cos(plaAng - PL_player.rot);
 
         if (pDist < 1) {
             wallHeight = RD_rend.screenHeight;
@@ -287,10 +397,27 @@ void RD_drawWolf() {
         }
 
         if (lastWasX) {
-            RD_drawWallSlice(x, wallHeight, wallType, 0xC0C0C0FF);
+            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xC0C0C0FF);
         }
         else {
-            RD_drawWallSlice(x, wallHeight, wallType, 0xFFFFFFFF);
+            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xFFFFFFFF);
+        }
+
+        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
+        pDist = dist * cos(plaAng - PL_player.rot);
+
+        if (pDist < 1) {
+            wallHeight = RD_rend.screenHeight;
+        }
+        else {
+            wallHeight = RD_rend.screenHeight / pDist;
+        }
+
+        if (lastWasX) {
+            RD_drawWallSliceLower(x, wallHeight, wallType, 0xC0C0C0FF);
+        }
+        else {
+            RD_drawWallSliceLower(x, wallHeight, wallType, 0xFFFFFFFF);
         }
     }
 }

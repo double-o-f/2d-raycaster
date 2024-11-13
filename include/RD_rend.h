@@ -40,8 +40,12 @@ void RD_fillScreen(uint32_t col);
 
 void RD_drawVertLine(int x, int startY, int endY, uint32_t col);
 
-void RD_drawWallSlice(int x, int wallHeight, int wallType, uint32_t bright);
+void RD_drawWallSliceUpper(int x, int wallHeight, int wallType, uint32_t bright);
 
+void RD_drawWallSliceLower(int x, int wallHeight, int wallType, uint32_t bright);
+
+
+void RD_castRayUpper(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
 
 void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
 

@@ -76,6 +76,7 @@ void MP_loadMap(const char* fileName) {
     fread(&PL_player.rot, sizeof(double), 1, filePtr);
     offset += sizeof(double);
     fseek(filePtr, offset, SEEK_SET);
+    PL_setRot(PL_player.rot);
 
     MP_map.map = (int*)malloc(MP_map.width * MP_map.height * sizeof(int));
     fread(MP_map.map, MP_map.width * MP_map.height * sizeof(int), 1, filePtr);
