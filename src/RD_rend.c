@@ -2,6 +2,8 @@
 #include <stdbool.h> //bool
 #include <math.h> //sin, cos, tan, atan, sqrtf
 
+#include <stdio.h>
+
 #include "PL_player.h" //PL_player.(x, y, rot)
 #include "MP_map.h" //MP_map.(map, width, height)
 #include "UI_ui.h" //MP_map.showMap
@@ -20,7 +22,7 @@ struct {
 } RD_colors;
 
 struct {
-    uint32_t texture2[16 * 16];
+    uint32_t textures[3][16 * 16];
 } RD_textures;
 
 struct RD_ray_ {
@@ -95,9 +97,9 @@ void RD_drawWallSliceUpper(int x, double plaAng, bool fish, RD_ray* ray) {
         wallStart = 0;
     }
 
-    uint32_t col = RD_colors.voidColor;
+    uint32_t texNum = 0;
     if ((*ray).wallType == 3) {
-        col = RD_colors.color3;
+        texNum = 3;
     }
     else if ((*ray).wallType == 100) {
         wallStart = 0;
@@ -114,10 +116,12 @@ void RD_drawWallSliceUpper(int x, double plaAng, bool fish, RD_ray* ray) {
     
 
     for (int y = wallStart; y < wallEnd; y += 1) {
-        //int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
-        //RD_rend.pixels[x + (y * RD_rend.screenWidth)] = RD_textures.texture3[texIndex] &= shade;
-
-        RD_rend.pixels[x + (y * RD_rend.screenWidth)] = col &= shade;
+        int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        uint32_t col = RD_textures.textures[texNum - 1][texIndex];
+            
+        if ((uint8_t)col != 0) {
+            RD_rend.pixels[x + (y * RD_rend.screenWidth)] = (col & shade);
+        }
         texPosY += texStep;
     }
 
@@ -151,19 +155,17 @@ void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
         texPosY = 0;
     }
     
-    uint32_t col = RD_colors.voidColor;
+    int texNum = 0;
     if ((*ray).wallType == 3)
     {
-        col = RD_colors.color3;
+        texNum = 3;
     }
     else if ((*ray).wallType == 17) {
-        col = RD_colors.color1;
+        texNum = 1;
     }
     else if ((*ray).wallType == 34)
     {
-        //col = RD_colors.color2;
-        col = RD_colors.color2;
-        //col = RD_textures.texture2[(int)(texPos * 16) + 16];
+        texNum = 2;
     }
     else if ((*ray).wallType == 100) {
         wallStart = 0;
@@ -178,32 +180,16 @@ void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
         shade = 0xFFFFFFFF;
     }
 
-
+    
     for (int y = wallStart; y < wallEnd; y += 1) {
-        //int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
-        //RD_rend.pixels[x + (y * RD_rend.screenWidth)] = RD_textures.texture3[texIndex] &= shade;
         
-        if ((*ray).wallType == 34) {
+        int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        uint32_t col = RD_textures.textures[texNum - 1][texIndex];
             
-            if ((*ray).texPosX > 0.25 && (*ray).texPosX < 0.75) {
-                if (texPosY > 0.25 && texPosY < 0.75) {
-                    col = RD_colors.voidColor;
-                }
-                else {
-                    col = RD_colors.color2;
-                }
-                
-            }
-            else {
-                col = RD_colors.color2;
-            }
-            
-
-        }
-
         if ((uint8_t)col != 0) {
-            RD_rend.pixels[x + (y * RD_rend.screenWidth)] = col &= shade;
+            RD_rend.pixels[x + (y * RD_rend.screenWidth)] = (col & shade);
         }
+        
         texPosY += texStep;
     }
 
@@ -212,10 +198,7 @@ void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
     free(oldRay);
     
     }
-    
-    
-    //RD_drawVertLine(x, wallStart, floorStart, col);
-    //RD_drawVertLine(x, floorStart, RD_rend.screenHeight, RD_rend.floorColor);
+
 }
 
 
@@ -277,10 +260,10 @@ RD_ray* RD_castRayUpper(double rayAng, double startX, double startY) {
             if (lastWasX) {
                 double posY = startY + (curDist / yStep) * yDir;
                 if (xDir < 0) {
-                    (*ray).texPosX = (1 - (posY - (int)posY));
+                    (*ray).texPosX = (posY - (int)posY);
                 }
                 else {
-                    (*ray).texPosX = (posY - (int)posY);
+                    (*ray).texPosX = (1 - (posY - (int)posY));
                 }
             }
             else {
@@ -554,8 +537,8 @@ void RD_changeFov(double fov) {
 }
 
 void RD_init() {
-    RD_rend.screenWidth = 853; // 1440// 1600// 800 // 1280// 640
-    RD_rend.screenHeight = 480; // 1080// 900// 450 // 720// 360
+    RD_rend.screenWidth = 853; // 1440// 1600// 800 // 1280// 640// 853
+    RD_rend.screenHeight = 480; // 1080// 900// 450 // 720// 360// 480
 
     RD_rend.pixels = (uint32_t*)malloc(RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
 
@@ -572,11 +555,26 @@ void RD_init() {
     RD_colors.color2 = 0x004499FF;
     RD_colors.color3 = 0x994400FF;
 
-    //for (int y; y < 16; y += 1) {
-    //    for (int x; x < 16; x += 1) {
-    //        RD_textures.texture2[x + (y * 16)] = 0xFF0000FF * (x % 2 && y % 2);
-    //    }
-    //}
+
+
+    for (int y = 0; y < 16; y += 1) {
+        for (int x = 0; x < 16; x += 1) {
+            RD_textures.textures[0][x + (y * 16)] = (0xAF000000 * (x % 4 && y % 4)) + 0xFF;
+        }
+    }
+
+    RD_textures.textures[1][0] = 0x00000000;
+    for (int y = 0; y < 16; y += 1) {
+        for (int x = 1; x < 16; x += 1) {
+            RD_textures.textures[1][x + (y * 16)] = (RD_textures.textures[1][(x - 1) + ((y - 1) * 16)] >> 1) ^ (RD_textures.textures[1][(x - 1) + ((y - 1) * 16)]);
+        }
+    }
+
+    for (int y = 0; y < 16; y += 1) {
+        for (int x = 0; x < 16; x += 1) {
+            RD_textures.textures[2][x + (y * 16)] = (0x2FC000FF * (x % 4 ^ y % 4)) + 0xFF;
+        }
+    }
 }
 
 void RD_destroy() {
