@@ -16,8 +16,8 @@ int main(int argc, char const *argv[]) {
     }
     
     PL_init();
-    PL_player.x = 2;
-    PL_player.y = 2;
+    PL_player.x = 2.5;
+    PL_player.y = 2.5;
     PL_setRot(0);
     
     MP_createMap(atoi(argv[1]), atoi(argv[2]), argv[3]);

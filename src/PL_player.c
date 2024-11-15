@@ -123,14 +123,14 @@ void PL_right(double accel) {
 
 
 void PL_move() {
-    bool cX =  PL_collisionCheck(PL_player.x + PL_player.xVelo + 0.001, PL_player.y);
-    bool cY =  PL_collisionCheck(PL_player.x                          , PL_player.y + PL_player.yVelo + 0.001);
-    bool cXY = PL_collisionCheck(PL_player.x + PL_player.xVelo + 0.001, PL_player.y + PL_player.yVelo + 0.001);
+    bool cX =  PL_collisionCheck(PL_player.x + PL_player.xVelo + 0.01, PL_player.y);
+    bool cY =  PL_collisionCheck(PL_player.x                          , PL_player.y + PL_player.yVelo + 0.01);
+    bool cXY = PL_collisionCheck(PL_player.x + PL_player.xVelo + 0.01, PL_player.y + PL_player.yVelo + 0.01);
     
-        cX |=  PL_collisionCheck(PL_player.x + PL_player.xVelo - 0.001, PL_player.y);
-        cY |=  PL_collisionCheck(PL_player.x                          , PL_player.y + PL_player.yVelo - 0.001);
-        cXY |= PL_collisionCheck(PL_player.x + PL_player.xVelo - 0.001, PL_player.y + PL_player.yVelo - 0.001);
-        
+        cX |=  PL_collisionCheck(PL_player.x + PL_player.xVelo - 0.01, PL_player.y);
+        cY |=  PL_collisionCheck(PL_player.x                          , PL_player.y + PL_player.yVelo - 0.01);
+        cXY |= PL_collisionCheck(PL_player.x + PL_player.xVelo - 0.01, PL_player.y + PL_player.yVelo - 0.01);
+
 
     if (!cX && !cY && !cXY) { //no collision
         PL_player.x += PL_player.xVelo;
@@ -147,23 +147,23 @@ void PL_move() {
     //}
     else if (!cX) { //no X collision
         PL_player.x += PL_player.xVelo; //apply X velo
-        if (PL_player.y + PL_player.yVelo < PL_player.y) {PL_player.y = (int)PL_player.y + 0.001;}
-        else if (PL_player.y + PL_player.yVelo > PL_player.y) {PL_player.y = ((int)PL_player.y) + 1 - 0.001;}
+        if (PL_player.y + PL_player.yVelo < PL_player.y) {PL_player.y = (int)PL_player.y + 0.01;}
+        else if (PL_player.y + PL_player.yVelo > PL_player.y) {PL_player.y = ((int)PL_player.y) + 1 - 0.01;}
         PL_player.yVelo = 0;
     }
     else if (!cY) { //no X collision
         PL_player.y += PL_player.yVelo; //apply Y velo
-        if (PL_player.x + PL_player.xVelo < PL_player.x) {PL_player.x = (int)PL_player.x + 0.001;}
-        else if (PL_player.x + PL_player.xVelo > PL_player.x) {PL_player.x = ((int)PL_player.x) + 1 - 0.001;}
+        if (PL_player.x + PL_player.xVelo < PL_player.x) {PL_player.x = (int)PL_player.x + 0.01;}
+        else if (PL_player.x + PL_player.xVelo > PL_player.x) {PL_player.x = ((int)PL_player.x) + 1 - 0.01;}
         PL_player.xVelo = 0;
     }
     else { //collision on X and Y but not XY
-        if (PL_player.y + PL_player.yVelo < PL_player.y) {PL_player.y = (int)PL_player.y + 0.001;}
-        else if (PL_player.y + PL_player.yVelo > PL_player.y) {PL_player.y = ((int)PL_player.y) + 1 - 0.001;}
+        if (PL_player.y + PL_player.yVelo < PL_player.y) {PL_player.y = (int)PL_player.y + 0.01;}
+        else if (PL_player.y + PL_player.yVelo > PL_player.y) {PL_player.y = ((int)PL_player.y) + 1 - 0.01;}
         PL_player.yVelo = 0;
         
-        if (PL_player.x + PL_player.xVelo < PL_player.x) {PL_player.x = (int)PL_player.x + 0.001;}
-        else if (PL_player.x + PL_player.xVelo > PL_player.x) {PL_player.x = ((int)PL_player.x) + 1 - 0.001;}
+        if (PL_player.x + PL_player.xVelo < PL_player.x) {PL_player.x = (int)PL_player.x + 0.01;}
+        else if (PL_player.x + PL_player.xVelo > PL_player.x) {PL_player.x = ((int)PL_player.x) + 1 - 0.01;}
         PL_player.xVelo = 0;
     }
 }
