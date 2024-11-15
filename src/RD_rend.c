@@ -183,7 +183,7 @@ void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
     
     for (int y = wallStart; y < wallEnd; y += 1) {
         
-        int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        int texIndex = (int)(texPosY * 16) + ((int)((*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
         uint32_t col = RD_textures.textures[texNum - 1][texIndex];
             
         if ((uint8_t)col != 0) {
