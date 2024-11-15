@@ -4,7 +4,7 @@
 #include <math.h> //sqrtf, powf
 #include <stdint.h> //uint32_t
 
-uint32_t MT_setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A);
+uint32_t MT_setColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
 double MT_getDist(double x1, double y1, double x2, double y2);
 

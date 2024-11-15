@@ -38,12 +38,16 @@ void MP_createMap(int width, int height, const char* name) {
 
     for (int x = 0 ; x < MP_map.width ; x += 1) {
         MP_changeWall(x, 0);
+        MP_changeWall(x, 0);
     }
     for (int y = 1 ; y < (MP_map.height - 1) ; y += 1) {
         MP_changeWall(0, y);
+        MP_changeWall(0, y);
+        MP_changeWall(MP_map.width - 1, y);
         MP_changeWall(MP_map.width - 1, y);
     }
     for (int x = 0 ; x < MP_map.width ; x += 1) {
+        MP_changeWall(x, MP_map.height - 1);
         MP_changeWall(x, MP_map.height - 1);
     }
 }
@@ -83,11 +87,17 @@ void MP_loadMap(const char* fileName) {
 }
 
 void MP_changeWall(int x, int y) {
-    if (MP_map.map[x + (y * MP_map.width)] >= 3) {
+    if (MP_map.map[x + (y * MP_map.width)] > 32) {
         MP_map.map[x + (y * MP_map.width)] = 0;
     }
-    else {
-        MP_map.map[x + (y * MP_map.width)] += 1;
+    else if (MP_map.map[x + (y * MP_map.width)] > 16) {
+        MP_map.map[x + (y * MP_map.width)] = 34;
+    }
+    else if (MP_map.map[x + (y * MP_map.width)] > 0) {
+        MP_map.map[x + (y * MP_map.width)] = 17;
+    }
+    else if (MP_map.map[x + (y * MP_map.width)] <= 0) {
+        MP_map.map[x + (y * MP_map.width)] = 3;
     }
 }
 

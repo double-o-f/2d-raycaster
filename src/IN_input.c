@@ -60,10 +60,10 @@ void IN_checkMovement() {
         PL_right(PL_player.accel);
     }
 
-    if (IN_input.KBState[SDL_SCANCODE_LEFT]) {
+    if (IN_input.KBState[SDL_SCANCODE_LEFT] || IN_input.KBState[SDL_SCANCODE_Q]) {
         PL_rotate(PL_player.rSpeed * -1);  
     }
-    if (IN_input.KBState[SDL_SCANCODE_RIGHT]) {
+    if (IN_input.KBState[SDL_SCANCODE_RIGHT] || IN_input.KBState[SDL_SCANCODE_E]) {
         PL_rotate(PL_player.rSpeed);  
     }
 }
@@ -102,6 +102,9 @@ void IN_menuActions() {
 
 
 void IN_allKBActions() {
+    if (IN_keyJustPressed(SDL_SCANCODE_P)) {
+        ST_state.quit = true;
+    }
     if (IN_keyJustPressed(SDL_SCANCODE_M)) {
         MP_saveMap();    
     }

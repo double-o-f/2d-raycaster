@@ -1,8 +1,11 @@
 #include <math.h> //sqrtf, powf
 #include <stdint.h> //uint32_t
 
-uint32_t MT_setColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
-    uint32_t col = (16777216 * R) + (65536 * G) + (256 * B) + (1 * A);
+uint32_t MT_setColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    uint32_t col = r;
+    col = (col << 8) + g;
+    col = (col << 8) + b;
+    col = (col << 8) + a;
     return col;
 }
 

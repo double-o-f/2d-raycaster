@@ -9,6 +9,32 @@
 #include "RD_rend.h"
 struct RD_rend_ RD_rend;
 
+struct {
+    uint32_t voidColor;
+    uint32_t skyColor;
+    uint32_t floorColor;
+    uint32_t color0;
+    uint32_t color1;
+    uint32_t color2;
+    uint32_t color3;
+} RD_colors;
+
+struct {
+    uint32_t texture2[16 * 16];
+} RD_textures;
+
+struct RD_ray_ {
+    RD_ray* lastRay;
+
+    //double posX;
+    //double posY;
+    double dist;
+    double texPosX;
+    int wallType;
+    bool lastWasX;
+};
+typedef struct RD_ray_ RD_ray;
+
 
 void RD_drawCrosshair() {
     RD_rend.pixels[(RD_rend.screenWidth / 2) + (RD_rend.screenWidth * (RD_rend.screenHeight / 2))] = 0xFFFFFFFF;
@@ -21,6 +47,10 @@ void RD_drawPoint(double x, double y, uint32_t col) {
     RD_rend.pixels[(int)screenX + ((int)screenY * RD_rend.screenWidth)] = col;
 }
 
+//void RD_blackScreen() {
+//    memset(RD_rend.pixels, 0, RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
+//}
+
 void RD_fillScreen(uint32_t col) {
     for (int i = 0; i < (RD_rend.screenWidth * RD_rend.screenHeight); i += 1) {
         RD_rend.pixels[i] = col;
@@ -28,69 +58,168 @@ void RD_fillScreen(uint32_t col) {
 }
 
 void RD_drawVertLine(int x, int startY, int endY, uint32_t col) {
-    for (int y = startY; y < endY; y += 1) {
+    
+    if ((uint8_t)col == 0) {return;}
+    
+    for (int y = startY; y < endY; y += 1) { 
         RD_rend.pixels[x + (y * RD_rend.screenWidth)] = col;
     }
 }
 
-void RD_drawWallSliceUpper(int x, int wallHeight, int wallType, uint32_t bright) {
+void RD_drawFloor(int x) {
+    int mid = RD_rend.screenHeight / 2;
+    RD_drawVertLine(x, 0, mid, RD_colors.skyColor);
+    RD_drawVertLine(x, mid, RD_rend.screenHeight, RD_colors.floorColor);
+}
 
+void RD_drawWallSliceUpper(int x, double plaAng, bool fish, RD_ray* ray) {
+    double pDist = (*ray).dist;
+    if (!fish) {
+        pDist *= cos(plaAng - PL_player.rot);
+    }
+
+    if (pDist < 1) { //if pDist < 1 too close to see upper wall so return
+        free(ray);
+        return;
+    }
+    
+    int wallHeight = RD_rend.screenHeight / pDist;
     int wallEnd = (RD_rend.screenHeight - wallHeight) / 2;
-    int wallStart =  wallEnd - wallHeight;
+    int wallStart = wallEnd - wallHeight;
+    double texPosY = 0;
+    double texStep = pDist / RD_rend.screenHeight; //how much texPosY is stepped by
+
+
     if (wallStart < 0) {
+        texPosY = fabs(wallStart) * texStep;
         wallStart = 0;
     }
 
-    uint32_t col = RD_rend.voidColor;
-    if (wallType == 3)
-    {
-        col = RD_rend.color3;
+    uint32_t col = RD_colors.voidColor;
+    if ((*ray).wallType == 3) {
+        col = RD_colors.color3;
     }
-    else if (wallType == -1) {
-        wallStart = RD_rend.screenHeight / 2;
-        wallEnd = wallStart;
+    else if ((*ray).wallType == 100) {
+        wallStart = 0;
+        wallEnd = 0;
+    }
+
+    uint32_t shade;
+    if ((*ray).lastWasX) {
+        shade = 0xC0C0C0FF;
     }
     else {
-        col = (uint32_t)wallType;   //this is bad but it looks cool
+        shade = 0xFFFFFFFF;
     }
-    col &= bright;
     
-    RD_drawVertLine(x, 0, wallStart, RD_rend.skyColor);
-    RD_drawVertLine(x, wallStart, wallEnd, col);
+
+    for (int y = wallStart; y < wallEnd; y += 1) {
+        //int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        //RD_rend.pixels[x + (y * RD_rend.screenWidth)] = RD_textures.texture3[texIndex] &= shade;
+
+        RD_rend.pixels[x + (y * RD_rend.screenWidth)] = col &= shade;
+        texPosY += texStep;
+    }
+
+    free(ray);
+    
+    //RD_drawVertLine(x, 0, wallStart, RD_rend.skyColor);
+    //RD_drawVertLine(x, wallStart, wallEnd, col);
 }
 
-void RD_drawWallSliceLower(int x, int wallHeight, int wallType, uint32_t bright) {
+void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
+    while (ray != NULL) {
 
+    double pDist = (*ray).dist;
+    if (!fish) {
+        pDist *= cos(plaAng - PL_player.rot);
+    }
+    
+    int wallHeight = RD_rend.screenHeight / pDist;
     int wallStart = (RD_rend.screenHeight - wallHeight) / 2;
-    int floorStart = wallStart + wallHeight;
+    int wallEnd;
+    double texPosY;
+    double texStep = pDist / RD_rend.screenHeight; //how much texPosY is stepped by. = 1 / (RD_rend.screenHeight / pDist)
+    
+    if (pDist < 1) {
+        wallEnd = RD_rend.screenHeight;
+        texPosY = fabs(wallStart) * texStep;
+        wallStart = 0;
+    } 
+    else {
+        wallEnd = wallStart + wallHeight;
+        texPosY = 0;
+    }
+    
+    uint32_t col = RD_colors.voidColor;
+    if ((*ray).wallType == 3)
+    {
+        col = RD_colors.color3;
+    }
+    else if ((*ray).wallType == 17) {
+        col = RD_colors.color1;
+    }
+    else if ((*ray).wallType == 34)
+    {
+        //col = RD_colors.color2;
+        col = RD_colors.color2;
+        //col = RD_textures.texture2[(int)(texPos * 16) + 16];
+    }
+    else if ((*ray).wallType == 100) {
+        wallStart = 0;
+        wallEnd = 0;
+    }
 
-    uint32_t col = RD_rend.voidColor;
-    if (wallType == 1)
-    {
-        col = RD_rend.color1;
-    }
-    else if (wallType == 2)
-    {
-        col = RD_rend.color2;
-    }
-    else if (wallType == 3)
-    {
-        col = RD_rend.color3;
-    }
-    else if (wallType == -1) {
-        wallStart = RD_rend.screenHeight / 2;
-        floorStart = wallStart;
+    uint32_t shade;
+    if ((*ray).lastWasX) {
+        shade = 0xC0C0C0FF;
     }
     else {
-        col = (uint32_t)wallType;   //this is bad but it looks cool
+        shade = 0xFFFFFFFF;
     }
-    col &= bright;
+
+
+    for (int y = wallStart; y < wallEnd; y += 1) {
+        //int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        //RD_rend.pixels[x + (y * RD_rend.screenWidth)] = RD_textures.texture3[texIndex] &= shade;
+        
+        if ((*ray).wallType == 34) {
+            
+            if ((*ray).texPosX > 0.25 && (*ray).texPosX < 0.75) {
+                if (texPosY > 0.25 && texPosY < 0.75) {
+                    col = RD_colors.voidColor;
+                }
+                else {
+                    col = RD_colors.color2;
+                }
+                
+            }
+            else {
+                col = RD_colors.color2;
+            }
+            
+
+        }
+
+        if ((uint8_t)col != 0) {
+            RD_rend.pixels[x + (y * RD_rend.screenWidth)] = col &= shade;
+        }
+        texPosY += texStep;
+    }
+
+    RD_ray* oldRay = ray;
+    ray = (*ray).lastRay;
+    free(oldRay);
     
-    RD_drawVertLine(x, wallStart, floorStart, col);
-    RD_drawVertLine(x, floorStart, RD_rend.screenHeight, RD_rend.floorColor);
+    }
+    
+    
+    //RD_drawVertLine(x, wallStart, floorStart, col);
+    //RD_drawVertLine(x, floorStart, RD_rend.screenHeight, RD_rend.floorColor);
 }
 
-void RD_castRayUpper(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
+
+RD_ray* RD_castRayUpper(double rayAng, double startX, double startY) {
     double rSin = sin(rayAng);
     double rCos = cos(rayAng);
 
@@ -125,43 +254,64 @@ void RD_castRayUpper(double rayAng, double startX, double startY, double* posX, 
     }
 
     double curDist = 0;
-    bool last = 0;
+    bool lastWasX = 0;
+    RD_ray* ray = (RD_ray*)malloc(sizeof(RD_ray));
+    
     while (true) {
-        if (mapX < 0 || mapX > MP_map.width - 1 || mapY < 0 || mapY > MP_map.height - 1) {
-            *dist = curDist;
-            *wallType = -1;
-            *lastWasX = last;
-            *posX = startX + (curDist / xStep) * xDir;
-            *posY = startY + (curDist / yStep) * yDir;
-            return;
-        }
+        if (mapX < 0 || mapX > MP_map.width - 1 || mapY < 0 || mapY > MP_map.height - 1) { //void
 
-        int wall = MP_map.map[mapX + (mapY * MP_map.width)];
-        if (wall >= 3) {
-            *posX = startX + (curDist / xStep) * xDir;
-            *posY = startY + (curDist / yStep) * yDir;
-            *dist = curDist;
-            *wallType = wall;
-            *lastWasX = last;
-            return;
+            (*ray).wallType = 100;
+            (*ray).lastWasX = 0;
+            (*ray).texPosX = 0;
+            return ray;
+        }
+        
+        int wall = abs(MP_map.map[mapX + (mapY * MP_map.width)]);
+        if (wall != 0 && wall <= 16) { //tall
+            
+            (*ray).dist = curDist;
+            (*ray).wallType = wall;
+            (*ray).lastWasX = lastWasX;
+
+            //check if texture needs to be flipped
+            if (lastWasX) {
+                double posY = startY + (curDist / yStep) * yDir;
+                if (xDir < 0) {
+                    (*ray).texPosX = (1 - (posY - (int)posY));
+                }
+                else {
+                    (*ray).texPosX = (posY - (int)posY);
+                }
+            }
+            else {
+                double posX = startX + (curDist / xStep) * xDir;
+                if (yDir < 0) {
+                    (*ray).texPosX = (1 - (posX - (int)posX));
+                }
+                else {
+                    (*ray).texPosX = (posX - (int)posX);
+                }
+            }
+
+            return ray;
         }
 
         if (rayX < rayY) {
             curDist = rayX;
             rayX += xStep;
             mapX += xDir;
-            last = 1;
+            lastWasX = 1;
         }
         else {
             curDist = rayY;
             rayY += yStep;
             mapY += yDir;
-            last = 0;
+            lastWasX = 0;
         }
     }
 }
 
-void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX) {
+RD_ray* RD_castRay(double rayAng, double startX, double startY, bool doDraw) {
     double rSin = sin(rayAng);
     double rCos = cos(rayAng);
 
@@ -196,15 +346,21 @@ void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double
     }
 
     double curDist = 0;
-    bool last = 0;
+    bool lastWasX = 0;
+    RD_ray* curPtr = NULL;
+    RD_ray* ray;
+
     while (true) {
-        if (mapX < 0 || mapX > MP_map.width - 1 || mapY < 0 || mapY > MP_map.height - 1) {
-            *dist = curDist;
-            *wallType = -1;
-            *lastWasX = last;
-            *posX = startX + (curDist / xStep) * xDir;
-            *posY = startY + (curDist / yStep) * yDir;
-            return;
+        if (mapX < 0 || mapX > MP_map.width - 1 || mapY < 0 || mapY > MP_map.height - 1) { //void
+            if (doDraw) {return ray;}
+            ray = (RD_ray*)malloc(sizeof(RD_ray));
+            (*ray).lastRay = curPtr;
+            
+            (*ray).dist = curDist;
+            (*ray).wallType = 100;
+            (*ray).lastWasX = 0;
+            (*ray).texPosX = 0;
+            return ray;
         }
 
         if (doDraw)
@@ -214,40 +370,59 @@ void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double
             RD_drawPoint(x, y, 0xFFFFFFFF);
         }
         
-        int wall = MP_map.map[mapX + (mapY * MP_map.width)];
+        int wall = abs(MP_map.map[mapX + (mapY * MP_map.width)]);
         if (wall != 0) {
-            *posX = startX + (curDist / xStep) * xDir;
-            *posY = startY + (curDist / yStep) * yDir;
-            *dist = curDist;
-            *wallType = wall;
-            *lastWasX = last;
-            return;
+            if (!doDraw) {
+                ray = (RD_ray*)malloc(sizeof(RD_ray));
+                (*ray).lastRay = curPtr;
+                curPtr = ray;
+            
+                (*ray).dist = curDist;
+                (*ray).wallType = wall;
+                (*ray).lastWasX = lastWasX;
+
+                //check if texture needs to be flipped
+                if (lastWasX) {
+                    double posY = startY + (curDist / yStep) * yDir;
+                    if (xDir < 0) {
+                        (*ray).texPosX = (posY - (int)posY);
+                    }
+                    else {
+                        (*ray).texPosX = (1 - (posY - (int)posY));
+                    }
+                }
+                else {
+                    double posX = startX + (curDist / xStep) * xDir;
+                    if (yDir < 0) {
+                        (*ray).texPosX = (1 - (posX - (int)posX));
+                    }
+                    else {
+                        (*ray).texPosX = (posX - (int)posX);
+                    }
+                }
+            }
+
+            if (wall <= 32) {return ray;} //return if solid
         }
 
         if (rayX < rayY) {
             curDist = rayX;
             rayX += xStep;
             mapX += xDir;
-            last = 1;
+            lastWasX = 1;
         }
         else {
             curDist = rayY;
             rayY += yStep;
             mapY += yDir;
-            last = 0;
+            lastWasX = 0;
         }
     }
 }
 
 
 void RD_drawRay() {
-    double posX;
-    double posY;
-    double dist;
-    int wallType;
-    bool lastWasX;
-
-    RD_castRay(PL_player.rot, PL_player.x, PL_player.y, true, &posX, &posY, &dist, &wallType, &lastWasX);
+    RD_castRay(PL_player.rot, PL_player.x, PL_player.y, true);
 }
 
 void RD_drawRays() {
@@ -257,15 +432,7 @@ void RD_drawRays() {
     for (int x = 0; x < RD_rend.screenWidth; x += 1) {
         double plaAng = PL_player.rot + fovOffset + (fovStep * x);
 
-        double posX;
-        double posY;
-        double dist;
-        int wallType;
-        bool lastWasX;
-
-        RD_castRay(plaAng, PL_player.x, PL_player.y, true, &posX, &posY, &dist, &wallType, &lastWasX);
-
-        RD_drawPoint(posX, posY, 0xFFFFFFFF);
+        RD_castRay(plaAng, PL_player.x, PL_player.y, true);
 
         fovOffset += fovStep;
     }
@@ -299,17 +466,17 @@ void RD_drawMap() {
 
             int wallType = MP_map.map[x + (y * MP_map.width)];
             uint32_t screenCol;
-            if (wallType == 1) {
-                screenCol = RD_rend.color1;
+            if (wallType == 1 || wallType == 17) {
+                screenCol = RD_colors.color1;
             }
-            else if (wallType == 2) {
-                screenCol = RD_rend.color2;
+            else if (wallType == 2 || wallType == 34) {
+                screenCol = RD_colors.color2;
             }
             else if (wallType == 3) {
-                screenCol = RD_rend.color3;
+                screenCol = RD_colors.color3;
             }
             else {
-                screenCol = RD_rend.color0;
+                screenCol = RD_colors.color0;
             }
 
             for (int i = 0; i < gapSizeY; i += 1) {     //i = y, j = x
@@ -328,43 +495,15 @@ void RD_drawFish() {
     for (int x = 0; x < RD_rend.screenWidth; x += 1) {
         double plaAng = PL_player.rot + fovOffset + (fovStep * x);
 
-        double posX;
-        double posY;
-        double dist;
-        int wallType;
-        bool lastWasX;
+        RD_ray* rayList;
 
-        int wallHeight;
+        RD_drawFloor(x);
 
-        RD_castRayUpper(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
-        if (dist < 1) {
-            wallHeight = RD_rend.screenHeight;
-        }
-        else {
-            wallHeight = RD_rend.screenHeight / dist;
-        }
+        RD_ray* ray = RD_castRayUpper(plaAng, PL_player.x, PL_player.y);
+        RD_drawWallSliceUpper(x, plaAng, true, ray);
 
-        if (lastWasX) {
-            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xC0C0C0FF);
-        }
-        else {
-            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xFFFFFFFF);
-        }
-
-        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
-        if (dist < 1) {
-            wallHeight = RD_rend.screenHeight;
-        }
-        else {
-            wallHeight = RD_rend.screenHeight / dist;
-        }
-
-        if (lastWasX) {
-            RD_drawWallSliceLower(x, wallHeight, wallType, 0xC0C0C0FF);
-        }
-        else {
-            RD_drawWallSliceLower(x, wallHeight, wallType, 0xFFFFFFFF);
-        }
+        ray = RD_castRay(plaAng, PL_player.x, PL_player.y, false);
+        RD_drawWallSliceLower(x, plaAng, true, ray);
 
         fovOffset += fovStep;
     }
@@ -375,50 +514,15 @@ void RD_drawWolf() {
 
     for (int x = 0; x < RD_rend.screenWidth; x += 1) {
         double plaX = x * plaXStep;
-        double plaAng = atan((((RD_rend.plaW * -1) / 2) + plaX) / RD_rend.plaDist) + PL_player.rot;
+        double plaAng = atan((((RD_rend.plaW * -1) * 0.5) + plaX) / RD_rend.plaDist) + PL_player.rot;
 
-        double posX;
-        double posY;
-        double dist;
-        int wallType;
-        bool lastWasX;
+        RD_drawFloor(x);
 
-        int wallHeight;
-        double pDist;
+        RD_ray* ray = RD_castRayUpper(plaAng, PL_player.x, PL_player.y);
+        RD_drawWallSliceUpper(x, plaAng, false, ray);
 
-        RD_castRayUpper(plaAng, PL_player.x, PL_player.y, &posX, &posY, &dist, &wallType, &lastWasX);
-        pDist = dist * cos(plaAng - PL_player.rot);
-
-        if (pDist < 1) {
-            wallHeight = RD_rend.screenHeight;
-        }
-        else {
-            wallHeight = RD_rend.screenHeight / pDist;
-        }
-
-        if (lastWasX) {
-            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xC0C0C0FF);
-        }
-        else {
-            RD_drawWallSliceUpper(x, wallHeight, wallType, 0xFFFFFFFF);
-        }
-
-        RD_castRay(plaAng, PL_player.x, PL_player.y, false, &posX, &posY, &dist, &wallType, &lastWasX);
-        pDist = dist * cos(plaAng - PL_player.rot);
-
-        if (pDist < 1) {
-            wallHeight = RD_rend.screenHeight;
-        }
-        else {
-            wallHeight = RD_rend.screenHeight / pDist;
-        }
-
-        if (lastWasX) {
-            RD_drawWallSliceLower(x, wallHeight, wallType, 0xC0C0C0FF);
-        }
-        else {
-            RD_drawWallSliceLower(x, wallHeight, wallType, 0xFFFFFFFF);
-        }
+        ray = RD_castRay(plaAng, PL_player.x, PL_player.y, false);
+        RD_drawWallSliceLower(x, plaAng, false, ray);
     }
 }
 
@@ -450,8 +554,8 @@ void RD_changeFov(double fov) {
 }
 
 void RD_init() {
-    RD_rend.screenWidth = 1280; // 1440// 1600// 800 //1280
-    RD_rend.screenHeight = 720; // 1080// 900// 450 //720
+    RD_rend.screenWidth = 853; // 1440// 1600// 800 // 1280// 640
+    RD_rend.screenHeight = 480; // 1080// 900// 450 // 720// 360
 
     RD_rend.pixels = (uint32_t*)malloc(RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
 
@@ -460,13 +564,19 @@ void RD_init() {
 
     RD_rend.fishEye = false;
 
-    RD_rend.voidColor = 0x000000FF;
-    RD_rend.color0 = 0x222222FF;
-    RD_rend.skyColor = 0x110033FF;
-    RD_rend.floorColor = 0x222222FF;
-    RD_rend.color1 = 0x990044FF;
-    RD_rend.color2 = 0x004499FF;
-    RD_rend.color3 = 0x994400FF;
+    RD_colors.voidColor = 0x00000000;
+    RD_colors.color0 = 0x222222FF;
+    RD_colors.skyColor = 0x110033FF;
+    RD_colors.floorColor = 0x222222FF;
+    RD_colors.color1 = 0x990044FF;
+    RD_colors.color2 = 0x004499FF;
+    RD_colors.color3 = 0x994400FF;
+
+    //for (int y; y < 16; y += 1) {
+    //    for (int x; x < 16; x += 1) {
+    //        RD_textures.texture2[x + (y * 16)] = 0xFF0000FF * (x % 2 && y % 2);
+    //    }
+    //}
 }
 
 void RD_destroy() {

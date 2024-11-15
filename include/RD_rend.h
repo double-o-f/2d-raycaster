@@ -20,34 +20,31 @@ struct RD_rend_{
     double plaW; //plane width
 
     bool fishEye;
-
-    uint32_t voidColor;
-    uint32_t skyColor;
-    uint32_t floorColor;
-    uint32_t color0;
-    uint32_t color1;
-    uint32_t color2;
-    uint32_t color3;
 };
 extern struct RD_rend_ RD_rend;
+
+typedef struct RD_ray_ RD_ray;
 
 
 void RD_drawCrosshair();
 
 void RD_drawPoint(double x, double y, uint32_t col);
 
+//void RD_blackScreen();
+
 void RD_fillScreen(uint32_t col);
+
+void RD_drawFloor(int x);
 
 void RD_drawVertLine(int x, int startY, int endY, uint32_t col);
 
-void RD_drawWallSliceUpper(int x, int wallHeight, int wallType, uint32_t bright);
+void RD_drawWallSliceUpper(int x, double plaAng, bool fish, RD_ray* ray);
 
-void RD_drawWallSliceLower(int x, int wallHeight, int wallType, uint32_t bright);
+void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray);
 
+RD_ray* RD_castRayUpper(double rayAng, double startX, double startY);
 
-void RD_castRayUpper(double rayAng, double startX, double startY, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
-
-void RD_castRay(double rayAng, double startX, double startY, bool doDraw, double* posX, double* posY, double* dist, int* wallType, bool* lastWasX);
+RD_ray* RD_castRay(double rayAng, double startX, double startY, bool doDraw);
 
 
 void RD_drawRay();
