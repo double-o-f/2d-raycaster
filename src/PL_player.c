@@ -166,6 +166,20 @@ void PL_move() {
         else if (PL_player.x + PL_player.xVelo > PL_player.x) {PL_player.x = ((int)PL_player.x) + 1 - 0.01;}
         PL_player.xVelo = 0;
     }
+    else {
+        if (fabs(PL_player.xVelo) >= fabs(PL_player.yVelo)) {
+            PL_player.x += PL_player.xVelo; //apply X velo
+            if (PL_player.y + PL_player.yVelo < PL_player.y) {PL_player.y = (int)PL_player.y + 0.01;}
+            else if (PL_player.y + PL_player.yVelo > PL_player.y) {PL_player.y = ((int)PL_player.y) + 1 - 0.01;}
+            PL_player.yVelo = 0;
+        }
+        else {
+            PL_player.y += PL_player.yVelo; //apply Y velo
+            if (PL_player.x + PL_player.xVelo < PL_player.x) {PL_player.x = (int)PL_player.x + 0.01;}
+            else if (PL_player.x + PL_player.xVelo > PL_player.x) {PL_player.x = ((int)PL_player.x) + 1 - 0.01;}
+            PL_player.xVelo = 0;
+        }
+    }
 
 }
 
