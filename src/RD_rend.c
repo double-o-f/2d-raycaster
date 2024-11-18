@@ -19,10 +19,15 @@ struct {
     uint32_t color1;
     uint32_t color2;
     uint32_t color3;
+
+    uint32_t shade;
+    uint32_t noShade;
 } RD_colors;
 
 struct {
-    uint32_t textures[3][16 * 16];
+    int texSize;
+    int texCount;
+    uint32_t** textures;
 } RD_textures;
 
 struct RD_ray_ {
@@ -108,15 +113,15 @@ void RD_drawWallSliceUpper(int x, double plaAng, bool fish, RD_ray* ray) {
 
     uint32_t shade;
     if ((*ray).lastWasX) {
-        shade = 0xC0C0C0FF;
+        shade = RD_colors.noShade;
     }
     else {
-        shade = 0xFFFFFFFF;
+        shade = RD_colors.shade;    
     }
     
 
     for (int y = wallStart; y < wallEnd; y += 1) {
-        int texIndex = (int)(texPosY * 16) + ((int)( (*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        int texIndex = (int)(texPosY * RD_textures.texSize) + ((int)( (*ray).texPosX * RD_textures.texSize) * RD_textures.texSize); //texture is flipped and rotated for caching
         uint32_t col = RD_textures.textures[texNum - 1][texIndex];
             
         if ((uint8_t)col != 0) {
@@ -126,9 +131,6 @@ void RD_drawWallSliceUpper(int x, double plaAng, bool fish, RD_ray* ray) {
     }
 
     free(ray);
-    
-    //RD_drawVertLine(x, 0, wallStart, RD_rend.skyColor);
-    //RD_drawVertLine(x, wallStart, wallEnd, col);
 }
 
 void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
@@ -174,16 +176,16 @@ void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
 
     uint32_t shade;
     if ((*ray).lastWasX) {
-        shade = 0xC0C0C0FF;
+        shade = RD_colors.noShade;
     }
     else {
-        shade = 0xFFFFFFFF;
+        shade = RD_colors.shade;
     }
 
     
     for (int y = wallStart; y < wallEnd; y += 1) {
         
-        int texIndex = (int)(texPosY * 16) + ((int)((*ray).texPosX * 16) * 16); //texture is flipped and rotated for caching
+        int texIndex = (int)(texPosY * RD_textures.texSize) + ((int)((*ray).texPosX * RD_textures.texSize) * RD_textures.texSize); //texture is flipped and rotated for caching
         uint32_t col = RD_textures.textures[texNum - 1][texIndex];
             
         if ((uint8_t)col != 0) {
@@ -555,28 +557,43 @@ void RD_init() {
     RD_colors.color2 = 0x004499FF;
     RD_colors.color3 = 0x994400FF;
 
+    RD_colors.shade = 0xB0B0B0FF;
+    RD_colors.noShade = 0xFFFFFFFF;
+
+    RD_textures.texCount = 3;
+    RD_textures.texSize = 32;
+
+    RD_textures.textures = (uint32_t**)malloc(RD_textures.texCount * sizeof(void*));
+    for (int i = 0; i < RD_textures.texCount; i += 1) {
+        RD_textures.textures[i] = (uint32_t*)malloc((RD_textures.texSize * RD_textures.texSize) * sizeof(uint32_t));
+    }
 
 
-    for (int y = 0; y < 16; y += 1) {
-        for (int x = 0; x < 16; x += 1) {
-            RD_textures.textures[0][x + (y * 16)] = (0xAF000000 * (x % 4 && y % 4)) + 0xFF;
+    for (int y = 0; y < RD_textures.texSize; y += 1) {
+        for (int x = 0; x < RD_textures.texSize; x += 1) {
+            RD_textures.textures[0][x + (y * RD_textures.texSize)] = (0xAF000000 * (x % 4 && y % 4)) + 0xFF;
         }
     }
 
     RD_textures.textures[1][0] = 0x00000000;
-    for (int y = 0; y < 16; y += 1) {
-        for (int x = 1; x < 16; x += 1) {
-            RD_textures.textures[1][x + (y * 16)] = (RD_textures.textures[1][(x - 1) + ((y - 1) * 16)] >> 1) ^ (RD_textures.textures[1][(x - 1) + ((y - 1) * 16)]);
+    for (int y = 0; y < RD_textures.texSize; y += 1) {
+        for (int x = 1; x < RD_textures.texSize; x += 1) {
+            RD_textures.textures[1][x + (y * RD_textures.texSize)] = (RD_textures.textures[1][(x - 1) + ((y - 1) * RD_textures.texSize)] >> 1) ^ (RD_textures.textures[1][(x - 1) + ((y - 1) * RD_textures.texSize)]);
         }
     }
 
-    for (int y = 0; y < 16; y += 1) {
-        for (int x = 0; x < 16; x += 1) {
-            RD_textures.textures[2][x + (y * 16)] = (0x2FC000FF * (x % 4 ^ y % 4)) + 0xFF;
+    for (int y = 0; y < RD_textures.texSize; y += 1) {
+        for (int x = 0; x < RD_textures.texSize; x += 1) {
+            RD_textures.textures[2][x + (y * RD_textures.texSize)] = (0x2FC000FF * (x % 4 ^ y % 4)) + 0xFF;
         }
     }
 }
 
 void RD_destroy() {
     free(RD_rend.pixels);
+    
+    for (int i = 0; i < RD_textures.texCount; i += 1) {
+        free(RD_textures.textures[i]);
+    }
+    free(RD_textures.textures);
 }
