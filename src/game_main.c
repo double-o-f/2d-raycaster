@@ -13,10 +13,20 @@
 int main(int argc, char const *argv[]) {
     printf("%s\n", ":)");
     
-
     //need to call all of these or something will brake
     PL_init();
-    MP_initLoadMap(); //need call after PL_init()
+
+    if (argc < 2) {
+        MP_initLoadMap(); //need call after PL_init()
+        printf("loaded resource/maps/map.map\n");
+    }
+    else if (argc == 2) {
+        MP_loadMap(argv[1]); //need call after PL_init()
+    }
+    else if (argc > 2) {
+        fprintf(stderr, "too many arguments\n");
+        exit(EXIT_FAILURE);
+    }
 
     RD_init();
     WI_init(); //need call after RD_init()
