@@ -6,13 +6,14 @@
 #include <time.h> //clock
 
 
-struct ST_state_{
+typedef struct {
     bool quit;
     double fpsCap;
     clock_t time;
     double delta;
-};
-extern struct ST_state_ ST_state;
+} ST_state_;
+
+extern ST_state_ ST_state;
 
 
 void ST_tickFpsCapped();

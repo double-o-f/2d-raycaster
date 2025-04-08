@@ -3,7 +3,7 @@
 #include <time.h> //clock
 
 #include "ST_state.h"
-struct ST_state_ ST_state;
+ST_state_ ST_state;
 
 
 void ST_tickFpsCapped() {

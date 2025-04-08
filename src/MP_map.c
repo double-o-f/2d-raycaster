@@ -4,7 +4,7 @@
 #include "PL_player.h" //PL_player.(x, y, rot)
 
 #include "MP_map.h"
-struct MP_map_ MP_map;
+MP_map_ MP_map;
 
 
 void MP_saveMap() {

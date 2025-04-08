@@ -16,7 +16,7 @@
 #include "UI_ui.h"
 
 #include "IN_input.h"
-struct IN_input_ IN_input;
+IN_input_ IN_input;
 
 
 bool IN_MBJustPressed(int mb) {

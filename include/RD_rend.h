@@ -9,7 +9,7 @@
 #include "MP_map.h" //MP_map.(map, width, height)
 
 
-struct RD_rend_{
+typedef struct {
     uint16_t screenWidth;
     uint16_t screenHeight;
 
@@ -20,10 +20,20 @@ struct RD_rend_{
     double plaW; //plane width
 
     bool fishEye;
-};
-extern struct RD_rend_ RD_rend;
+} RD_rend_;
 
-typedef struct RD_ray_ RD_ray;
+typedef struct {
+    void* lastRay;
+
+    //double posX;
+    //double posY;
+    double dist;
+    double texPosX;
+    int wallType;
+    bool lastWasX;
+} RD_ray;
+
+extern RD_rend_ RD_rend;
 
 
 void RD_drawCrosshair();

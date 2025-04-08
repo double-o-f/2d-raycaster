@@ -11,15 +11,16 @@
 #include "RD_rend.h" //RD_rend.pixels, RD_rend.screenWidth, RD_rend.screenHeight
 
 
-struct WI_window_{
+typedef struct {
     uint16_t windowWidth; 
     uint16_t windowHeight; 
 
     SDL_Window* window;
     SDL_Texture* texture;
     SDL_Renderer* renderer;
-};
-extern struct WI_window_ WI_window;
+} WI_window_;
+
+extern WI_window_ WI_window;
 
 
 void WI_draw();

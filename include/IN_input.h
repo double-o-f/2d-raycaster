@@ -18,7 +18,7 @@
 #include "UI_ui.h"
 
 
-struct IN_input_{
+typedef struct {
     SDL_Event event;
     
     int mouseX;
@@ -28,8 +28,9 @@ struct IN_input_{
     const uint8_t* KBState;
     uint8_t* KBLastState;
     int KBLen;
-};
-extern struct IN_input_ IN_input;
+} IN_input_;
+
+extern IN_input_ IN_input;
 
 
 bool IN_MBJustPressed(int mb);

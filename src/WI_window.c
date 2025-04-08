@@ -8,7 +8,7 @@
 #include "RD_rend.h" //RD_rend.pixels, RD_rend.screenWidth, RD_rend.screenHeight
 
 #include "WI_window.h"
-struct WI_window_ WI_window;
+WI_window_ WI_window;
 
 
 void WI_draw() {

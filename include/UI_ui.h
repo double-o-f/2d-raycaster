@@ -4,12 +4,13 @@
 #include <stdbool.h>
 
 
-struct UI_ui_ {
+typedef struct {
     bool showMenu;
     bool showMap;
     bool showGame;
-};
-extern struct UI_ui_ UI_ui;
+} UI_ui_;
+
+extern UI_ui_ UI_ui;
 
 
 void UI_init();

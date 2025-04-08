@@ -9,7 +9,7 @@
 #include "ST_state.h" //ST_state.delta
 
 
-struct PL_player_{
+typedef struct {
     double x;
     double y;
 
@@ -29,8 +29,9 @@ struct PL_player_{
     double nSin;
     double nCos;
     double mSpeed;
-};
-extern struct PL_player_ PL_player;
+} PL_player_;
+
+extern PL_player_ PL_player;
 
 
 bool PL_collisionCheck(double x, double y);

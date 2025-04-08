@@ -7,13 +7,14 @@
 #include "PL_player.h" //PL_player.(x, y, rot)
 
 
-struct MP_map_ {
+typedef struct {
     int width;
     int height;
     int* map;
     const char* name;
-};
-extern struct MP_map_ MP_map;
+} MP_map_;
+
+extern MP_map_ MP_map;
 
 
 void MP_saveMap();

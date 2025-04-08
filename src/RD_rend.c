@@ -9,7 +9,7 @@
 #include "UI_ui.h" //MP_map.showMap
 
 #include "RD_rend.h"
-struct RD_rend_ RD_rend;
+RD_rend_ RD_rend;
 
 struct {
     uint32_t voidColor;
@@ -29,18 +29,6 @@ struct {
     int texCount;
     uint32_t** textures;
 } RD_textures;
-
-struct RD_ray_ {
-    RD_ray* lastRay;
-
-    //double posX;
-    //double posY;
-    double dist;
-    double texPosX;
-    int wallType;
-    bool lastWasX;
-};
-typedef struct RD_ray_ RD_ray;
 
 
 void RD_drawCrosshair() {

@@ -6,7 +6,7 @@
 #include "ST_state.h" //ST_state.delta
 
 #include "PL_player.h"
-struct PL_player_ PL_player;
+PL_player_ PL_player;
 
 
 bool PL_collisionCheck(double x, double y) {
