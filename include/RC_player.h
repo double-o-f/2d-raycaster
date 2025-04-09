@@ -1,12 +1,12 @@
-#ifndef HEADER_PL_INCLUDED
-#define HEADER_PL_INCLUDED
+#ifndef HEADER_RC_PL_INCLUDED
+#define HEADER_RC_PL_INCLUDED
 
 #include <stdbool.h> //bool
 #include <math.h> //sin, cos, fabs
 
-#include "MT_math.h" //zeroOut 
-#include "MP_map.h" //MP_map.(map, width)
-#include "ST_state.h" //ST_state.delta
+#include "RC_math.h" //zeroOut 
+#include "RC_map.h" //MP_map.(map, width)
+#include "RC_state.h" //ST_state.delta
 
 
 typedef struct {

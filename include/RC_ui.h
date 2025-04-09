@@ -1,5 +1,5 @@
-#ifndef HEADER_UI_INCLUDED
-#define HEADER_UI_INCLUDED
+#ifndef HEADER_RC_UI_INCLUDED
+#define HEADER_RC_UI_INCLUDED
 
 #include <stdbool.h>
 

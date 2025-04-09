@@ -1,5 +1,5 @@
-#ifndef HEADER_ST_INCLUDED
-#define HEADER_ST_INCLUDED
+#ifndef HEADER_RC_ST_INCLUDED
+#define HEADER_RC_ST_INCLUDED
 
 #include <stdbool.h> //bool
 //#include <math.h> //

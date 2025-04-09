@@ -1,9 +1,9 @@
 #include <stdlib.h> //malloc
 #include <stdio.h> //FILE, fwrite, fread, fseek, fflush
 
-#include "PL_player.h" //PL_player.(x, y, rot)
+#include "RC_player.h" //PL_player.(x, y, rot)
 
-#include "MP_map.h"
+#include "RC_map.h"
 MP_map_ MP_map;
 
 

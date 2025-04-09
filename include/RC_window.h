@@ -1,5 +1,5 @@
-#ifndef HEADER_WI_INCLUDED
-#define HEADER_WI_INCLUDED
+#ifndef HEADER_RC_WI_INCLUDED
+#define HEADER_RC_WI_INCLUDED
 
 #include <stdio.h> //printf, fprintf
 
@@ -8,7 +8,7 @@
 #endif
 #include <SDL2/SDL.h>
 
-#include "RD_rend.h" //RD_rend.pixels, RD_rend.screenWidth, RD_rend.screenHeight
+#include "RC_rend.h" //RD_rend.pixels, RD_rend.screenWidth, RD_rend.screenHeight
 
 
 typedef struct {

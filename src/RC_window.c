@@ -5,9 +5,9 @@
 #endif
 #include <SDL2/SDL.h>
 
-#include "RD_rend.h" //RD_rend.pixels, RD_rend.screenWidth, RD_rend.screenHeight
+#include "RC_rend.h" //RD_rend.pixels, RD_rend.screenWidth, RD_rend.screenHeight
 
-#include "WI_window.h"
+#include "RC_window.h"
 WI_window_ WI_window;
 
 

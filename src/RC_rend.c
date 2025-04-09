@@ -4,11 +4,11 @@
 
 #include <stdio.h>
 
-#include "PL_player.h" //PL_player.(x, y, rot)
-#include "MP_map.h" //MP_map.(map, width, height)
-#include "UI_ui.h" //MP_map.showMap
+#include "RC_player.h" //PL_player.(x, y, rot)
+#include "RC_map.h" //MP_map.(map, width, height)
+#include "RC_ui.h" //MP_map.showMap
 
-#include "RD_rend.h"
+#include "RC_rend.h"
 RD_rend_ RD_rend;
 
 struct {

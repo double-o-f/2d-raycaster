@@ -1,12 +1,12 @@
-#ifndef HEADER_RD_INCLUDED
-#define HEADER_RD_INCLUDED
+#ifndef HEADER_RC_RD_INCLUDED
+#define HEADER_RC_RD_INCLUDED
 
 #include <stdlib.h> //malloc
 #include <stdbool.h> //bool
 #include <math.h> //sin, cos, tan, atan, sqrtf
 
-#include "PL_player.h" //PL_player.(x, y, rot)
-#include "MP_map.h" //MP_map.(map, width, height)
+#include "RC_player.h" //PL_player.(x, y, rot)
+#include "RC_map.h" //MP_map.(map, width, height)
 
 
 typedef struct {

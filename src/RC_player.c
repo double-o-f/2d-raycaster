@@ -1,11 +1,11 @@
 #include <stdbool.h> //bool
 #include <math.h> //sin, cos, fabs
 
-#include "MT_math.h" //zeroOut 
-#include "MP_map.h" //MP_map.(map, width)
-#include "ST_state.h" //ST_state.delta
+#include "RC_math.h" //zeroOut 
+#include "RC_map.h" //MP_map.(map, width)
+#include "RC_state.h" //ST_state.delta
 
-#include "PL_player.h"
+#include "RC_player.h"
 PL_player_ PL_player;
 
 

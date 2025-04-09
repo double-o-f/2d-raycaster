@@ -1,8 +1,8 @@
 #include <stdlib.h> //exit()
 #include <stdio.h> //printf
 
-#include "PL_player.h"
-#include "MP_map.h"
+#include "RC_player.h"
+#include "RC_map.h"
 
 
 int main(int argc, char const *argv[]) {

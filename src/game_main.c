@@ -1,14 +1,14 @@
 #include <stdlib.h> //exit()
 #include <stdio.h> //printf
 
-#include "MT_math.h"
-#include "PL_player.h"
-#include "MP_map.h"
-#include "RD_rend.h"
-#include "WI_window.h"
-#include "IN_input.h"
-#include "ST_state.h"
-#include "UI_ui.h"
+#include "RC_math.h"
+#include "RC_player.h"
+#include "RC_map.h"
+#include "RC_rend.h"
+#include "RC_window.h"
+#include "RC_input.h"
+#include "RC_state.h"
+#include "RC_ui.h"
 
 int main(int argc, char const *argv[]) {
     printf("%s\n", ":)");

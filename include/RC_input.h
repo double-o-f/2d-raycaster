@@ -1,5 +1,5 @@
-#ifndef HEADER_IN_INCLUDED
-#define HEADER_IN_INCLUDED
+#ifndef HEADER_RC_IN_INCLUDED
+#define HEADER_RC_IN_INCLUDED
 
 #include <stdbool.h> //bool
 #include <stdint.h> //uint8_t
@@ -10,12 +10,12 @@
 #endif
 #include <SDL2/SDL.h>
 
-#include "PL_player.h"
-#include "MP_map.h"
-#include "RD_rend.h"
-#include "WI_window.h"
-#include "ST_state.h"
-#include "UI_ui.h"
+#include "RC_player.h"
+#include "RC_map.h"
+#include "RC_rend.h"
+#include "RC_window.h"
+#include "RC_state.h"
+#include "RC_ui.h"
 
 
 typedef struct {

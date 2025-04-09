@@ -1,5 +1,5 @@
-#ifndef HEADER_MT_INCLUDED
-#define HEADER_MT_INCLUDED
+#ifndef HEADER_RC_MT_INCLUDED
+#define HEADER_RC_MT_INCLUDED
 
 #include <math.h> //sqrtf, powf
 #include <stdint.h> //uint32_t

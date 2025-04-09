@@ -1,10 +1,10 @@
-#ifndef HEADER_MP_INCLUDED
-#define HEADER_MP_INCLUDED
+#ifndef HEADER_RC_MP_INCLUDED
+#define HEADER_RC_MP_INCLUDED
 
 #include <stdlib.h> //malloc
 #include <stdio.h> //FILE, fwrite, fread, fseek, fflush
 
-#include "PL_player.h" //PL_player.(x, y, rot)
+#include "RC_player.h" //PL_player.(x, y, rot)
 
 
 typedef struct {
