@@ -177,7 +177,8 @@ void RD_drawWallSliceLower(int x, double plaAng, bool fish, RD_ray* ray) {
         uint32_t col = RD_textures.textures[texNum - 1][texIndex];
             
         if ((uint8_t)col != 0) {
-            RD_rend.pixels[x + (y * RD_rend.screenWidth)] = (col & shade);
+            //RD_rend.pixels[x + (y * RD_rend.screenWidth)] = (col & shade);
+            RD_rend.pixels[x + (y * RD_rend.screenWidth)] = (RD_rend.pixelsOld[x + (y * RD_rend.screenWidth)] >> 2) + (col & shade);
         }
         
         texPosY += texStep;
@@ -491,8 +492,8 @@ void RD_drawWolf() {
 
         RD_drawFloor(x);
 
-        RD_ray* ray = RD_castRayUpper(plaAng, PL_player.x, PL_player.y);
-        RD_drawWallSliceUpper(x, plaAng, false, ray);
+        RD_ray* ray;// = RD_castRayUpper(plaAng, PL_player.x, PL_player.y);
+        //RD_drawWallSliceUpper(x, plaAng, false, ray);
 
         ray = RD_castRay(plaAng, PL_player.x, PL_player.y, false);
         RD_drawWallSliceLower(x, plaAng, false, ray);
@@ -501,6 +502,11 @@ void RD_drawWolf() {
 
 
 void RD_drawStuff() {
+    for (int i = 0; i < (RD_rend.screenWidth * RD_rend.screenHeight); i++)
+    {
+        RD_rend.pixelsOld[i] = RD_rend.pixels[i];
+    }
+    
     if (UI_ui.showMap) {
         RD_drawMap();
         RD_drawPoint(PL_player.x, PL_player.y, 0xFFFFFFFF);
@@ -531,6 +537,7 @@ void RD_init() {
     RD_rend.screenHeight = 480; // 1080// 900// 450 // 720// 360// 480
 
     RD_rend.pixels = (uint32_t*)malloc(RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
+    RD_rend.pixelsOld = (uint32_t*)malloc(RD_rend.screenWidth * RD_rend.screenHeight * sizeof(uint32_t));
 
     RD_rend.plaDist = 1; //can be practically anything and curent renderer will still work
     RD_changeFov(1.745329); //1.745329 = 100, (M_PI * 2) / 4 or 1.570796 = 90
@@ -579,6 +586,7 @@ void RD_init() {
 
 void RD_destroy() {
     free(RD_rend.pixels);
+    free(RD_rend.pixelsOld);
     
     for (int i = 0; i < RD_textures.texCount; i += 1) {
         free(RD_textures.textures[i]);

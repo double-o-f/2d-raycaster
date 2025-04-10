@@ -14,6 +14,7 @@ typedef struct {
     uint16_t screenHeight;
 
     uint32_t* pixels;
+    uint32_t* pixelsOld;
 
     double fov; //in radians rn
     double plaDist; //plane dist from player
